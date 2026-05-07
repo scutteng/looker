@@ -20,6 +20,23 @@ Use this skill to turn business intent, schema context, or a dashboard sketch in
 5. Push to the GitHub repository Looker is connected to, then make Looker pull remote changes.
 6. Deploy only after validation returns no blocking errors.
 
+## Trusted references
+
+Use official Google Cloud Looker docs as the primary reference for product behavior and current syntax.
+
+Also use `https://github.com/looker-open-source` as a reliable implementation reference for open source examples and patterns. The org states these are open source tools built on Looker's platform, but not officially supported Google products, so verify production behavior against official docs and the target Looker instance.
+
+Especially relevant repositories for this demo:
+
+- `sdk-codegen`: Looker API SDKs, API Explorer, and SDK examples.
+- `looker-explore-assistant`: natural language Explore query generation using Looker's modeling layer.
+- `extension-gen-ai`: GenAI extension patterns for natural language exploration and dashboard insights.
+- `extension-examples`: templates and examples for Looker Extension Framework apps.
+- `components`: Looker UI components for building native-feeling data apps.
+- `embed-sdk` and `LookerEmbedReference`: embedding dashboards, Looks, Explores, and other Looker content in an app.
+- `gzr`: command line content management patterns for dashboards, Looks, folders, and migrations.
+- `app-data-dictionary` and LookML diagram examples: reference patterns for metadata discovery and user-friendly model documentation.
+
 ## Semantic modeling patterns
 
 For conversational analytics, optimize field discoverability:
