@@ -9,6 +9,7 @@ This repository is a small Looker project that demonstrates how AI can generate 
 - Field labels, descriptions, and synonyms so natural language can map to LookML fields.
 - Business metrics such as sales, profit, margin, average order value, customer count, and sales per customer.
 - Advanced period-over-period measures for YoY and MoM analysis.
+- A LookML dashboard that demonstrates how AI can generate governed dashboard content from the semantic layer.
 
 ## Demo Story
 
@@ -25,9 +26,11 @@ Looker is code-based, API-first, Git-managed, and governed. Those characteristic
 - What is the average order value by ship mode?
 - Compare this month sales with last month.
 - Show revenue, profit, and margin for Corporate customers in the West region.
+- Build an executive dashboard for Superstore sales performance.
 
 ## Key Files
 
 - `models/superstore_en.model.lkml`: connection, cache policy, and the governed Explore.
 - `views/superstore_en.view.lkml`: dimensions, measures, synonyms, drill fields, and period-over-period metrics.
+- `dashboards/superstore_executive_overview.dashboard.lookml`: AI-generated dashboard definition for executive sales review.
 - `manifest.lkml`: enables the new LookML runtime required for newer semantic-layer features such as field synonyms.
