@@ -50,7 +50,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.sales]
+    measures: [superstore_en.sales_compact]
     listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
   - name: sales_orders

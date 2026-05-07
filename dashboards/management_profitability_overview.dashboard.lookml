@@ -52,7 +52,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.sales]
+    measures: [superstore_en.sales_compact]
     listen: {区域: superstore_en.region, 订单日期: superstore_en.order_date, 州/省: superstore_en.state, 利润状态: superstore_en.profit_status}
 
   - name: mgmt_profit
@@ -60,7 +60,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.profit]
+    measures: [superstore_en.profit_compact]
     listen: {区域: superstore_en.region, 订单日期: superstore_en.order_date, 州/省: superstore_en.state, 利润状态: superstore_en.profit_status}
 
   - name: mgmt_profit_margin

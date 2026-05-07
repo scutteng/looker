@@ -43,7 +43,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.sales]
+    measures: [superstore_en.sales_compact]
     listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_profit
@@ -51,7 +51,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.profit]
+    measures: [superstore_en.profit_compact]
     listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_margin

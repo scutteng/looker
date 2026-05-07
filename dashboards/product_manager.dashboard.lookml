@@ -50,7 +50,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.sales]
+    measures: [superstore_en.sales_compact]
     listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
   - name: product_profit
@@ -58,7 +58,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.profit]
+    measures: [superstore_en.profit_compact]
     listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
   - name: product_active_skus

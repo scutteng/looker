@@ -50,7 +50,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.sales]
+    measures: [superstore_en.sales_compact]
     listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Profit Status: superstore_en.profit_status, Discount Tier: superstore_en.discount_tier}
 
   - name: finance_total_profit
@@ -58,7 +58,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.profit]
+    measures: [superstore_en.profit_compact]
     listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Profit Status: superstore_en.profit_status, Discount Tier: superstore_en.discount_tier}
 
   - name: finance_profit_margin
@@ -74,7 +74,7 @@
     type: single_value
     model: superstore_en
     explore: superstore_en
-    measures: [superstore_en.loss_amount]
+    measures: [superstore_en.loss_amount_compact]
     listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Profit Status: superstore_en.profit_status, Discount Tier: superstore_en.discount_tier}
 
   - name: finance_discount_ratio
