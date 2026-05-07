@@ -1,6 +1,6 @@
 - dashboard: sales_manager
   title: "Sales Manager Dashboard"
-  description: "Sales execution view focused on bookings, order volume, customer reach, regional performance, and sales momentum."
+  description: "Territory execution view for sales coverage, customer expansion, order productivity, and market focus."
   layout: grid
   preferred_viewer: dashboards-next
   crossfilter_enabled: true
@@ -26,58 +26,48 @@
     model: superstore_en
     explore: superstore_en
     field: superstore_en.segment
-  - name: "Product Category"
-    title: "Product Category"
+  - name: "State"
+    title: "State"
     type: field_filter
     allow_multiple_values: true
     model: superstore_en
     explore: superstore_en
-    field: superstore_en.category
+    field: superstore_en.state
 
   rows:
-  - elements: [sales_total_sales, sales_order_count, sales_customer_count, sales_aov]
+  - elements: [sales_bookings, sales_orders, sales_customers, sales_aov, sales_units_per_order]
     height: 120
-  - elements: [sales_monthly_momentum, sales_regional_performance]
+  - elements: [sales_territory_map, sales_monthly_momentum]
+    height: 380
+  - elements: [sales_region_segment_matrix, sales_city_leaderboard]
     height: 360
-  - elements: [sales_segment_performance, sales_top_customers]
-    height: 360
+  - elements: [sales_account_focus]
+    height: 420
 
   elements:
-  - name: sales_total_sales
-    title: "Total Sales"
+  - name: sales_bookings
+    title: "Sales Bookings"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.sales]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
-  - name: sales_order_count
+  - name: sales_orders
     title: "Orders"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.order_count]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
-  - name: sales_customer_count
-    title: "Customers"
+  - name: sales_customers
+    title: "Buying Customers"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.customer_count]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
   - name: sales_aov
     title: "Average Order Value"
@@ -85,14 +75,29 @@
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.average_order_value]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
+
+  - name: sales_units_per_order
+    title: "Units per Order"
+    type: single_value
+    model: superstore_en
+    explore: superstore_en
+    measures: [superstore_en.units_per_order]
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
+
+  - name: sales_territory_map
+    title: "US Territory Sales Map"
+    type: looker_map
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.state]
+    measures: [superstore_en.sales]
+    sorts: ["superstore_en.sales desc"]
+    limit: 50
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
   - name: sales_monthly_momentum
-    title: "Monthly Sales Momentum"
+    title: "Monthly Momentum and MoM Growth"
     type: looker_line
     model: superstore_en
     explore: superstore_en
@@ -100,53 +105,38 @@
     measures: [superstore_en.sales, superstore_en.sales_last_month, superstore_en.sales_mom_growth]
     sorts: [superstore_en.order_month]
     limit: 500
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
-  - name: sales_regional_performance
-    title: "Regional Sales Performance"
+  - name: sales_region_segment_matrix
+    title: "Region by Segment Coverage"
     type: looker_column
     model: superstore_en
     explore: superstore_en
-    dimensions: [superstore_en.region]
-    measures: [superstore_en.sales, superstore_en.order_count, superstore_en.sales_per_customer]
+    dimensions: [superstore_en.region, superstore_en.segment]
+    pivots: [superstore_en.segment]
+    measures: [superstore_en.sales]
     sorts: ["superstore_en.sales desc"]
-    limit: 10
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    limit: 20
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
-  - name: sales_segment_performance
-    title: "Customer Segment Performance"
+  - name: sales_city_leaderboard
+    title: "Top City Markets"
     type: looker_bar
     model: superstore_en
     explore: superstore_en
-    dimensions: [superstore_en.segment]
-    measures: [superstore_en.sales, superstore_en.customer_count, superstore_en.average_order_value]
+    dimensions: [superstore_en.city, superstore_en.state]
+    measures: [superstore_en.sales, superstore_en.order_count, superstore_en.customer_count]
     sorts: ["superstore_en.sales desc"]
-    limit: 10
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    limit: 20
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
 
-  - name: sales_top_customers
-    title: "Top Customers by Sales"
+  - name: sales_account_focus
+    title: "Account Focus List"
     type: looker_grid
     model: superstore_en
     explore: superstore_en
-    dimensions: [superstore_en.customer_name, superstore_en.segment, superstore_en.region]
-    measures: [superstore_en.sales, superstore_en.profit, superstore_en.order_count, superstore_en.average_order_value]
+    dimensions: [superstore_en.customer_name, superstore_en.segment, superstore_en.city, superstore_en.state]
+    measures: [superstore_en.sales, superstore_en.order_count, superstore_en.average_order_value, superstore_en.profit_per_order]
     sorts: ["superstore_en.sales desc"]
-    limit: 25
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-      Product Category: superstore_en.category
+    limit: 30
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment, State: superstore_en.state}
