@@ -1,6 +1,6 @@
 - dashboard: product_manager
   title: "Product Manager Dashboard"
-  description: "Product portfolio view focused on category health, SKU breadth, demand, profitability, and discount pressure."
+  description: "Portfolio strategy view for category mix, SKU productivity, discount pressure, and product risk."
   layout: grid
   preferred_viewer: dashboards-next
   crossfilter_enabled: true
@@ -26,128 +26,118 @@
     model: superstore_en
     explore: superstore_en
     field: superstore_en.subcategory
-  - name: "Region"
-    title: "Region"
+  - name: "Discount Tier"
+    title: "Discount Tier"
     type: field_filter
     allow_multiple_values: true
     model: superstore_en
     explore: superstore_en
-    field: superstore_en.region
+    field: superstore_en.discount_tier
 
   rows:
-  - elements: [product_total_sales, product_total_profit, product_count, product_units_sold]
+  - elements: [product_sales, product_profit, product_active_skus, product_units, product_margin]
     height: 120
-  - elements: [product_category_trend, product_category_profitability]
+  - elements: [product_category_share, product_category_trend]
     height: 360
-  - elements: [product_subcategory_mix, product_sku_watchlist]
-    height: 360
+  - elements: [product_subcategory_matrix, product_discount_pressure]
+    height: 380
+  - elements: [product_portfolio_watchlist]
+    height: 420
 
   elements:
-  - name: product_total_sales
-    title: "Product Sales"
+  - name: product_sales
+    title: "Portfolio Sales"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.sales]
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
-  - name: product_total_profit
-    title: "Product Profit"
+  - name: product_profit
+    title: "Portfolio Profit"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.profit]
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
-  - name: product_count
-    title: "Active Products"
+  - name: product_active_skus
+    title: "Active SKUs"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.product_count]
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
-  - name: product_units_sold
+  - name: product_units
     title: "Units Sold"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.quantity]
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
+
+  - name: product_margin
+    title: "Portfolio Margin"
+    type: single_value
+    model: superstore_en
+    explore: superstore_en
+    measures: [superstore_en.profit_margin]
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
+
+  - name: product_category_share
+    title: "Category Sales Mix"
+    type: looker_pie
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.category]
+    measures: [superstore_en.sales]
+    sorts: ["superstore_en.sales desc"]
+    limit: 10
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
   - name: product_category_trend
-    title: "Monthly Sales by Category"
+    title: "Category Trend by Month"
     type: looker_line
     model: superstore_en
     explore: superstore_en
     dimensions: [superstore_en.order_month, superstore_en.category]
-    measures: [superstore_en.sales]
     pivots: [superstore_en.category]
+    measures: [superstore_en.sales]
     sorts: [superstore_en.order_month]
     limit: 500
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
-  - name: product_category_profitability
-    title: "Category Profitability"
-    type: looker_column
-    model: superstore_en
-    explore: superstore_en
-    dimensions: [superstore_en.category]
-    measures: [superstore_en.sales, superstore_en.profit, superstore_en.profit_margin]
-    sorts: ["superstore_en.sales desc"]
-    limit: 10
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
-
-  - name: product_subcategory_mix
-    title: "Subcategory Sales and Margin"
-    type: looker_bar
+  - name: product_subcategory_matrix
+    title: "Subcategory Productivity Matrix"
+    type: looker_scatter
     model: superstore_en
     explore: superstore_en
     dimensions: [superstore_en.subcategory]
-    measures: [superstore_en.sales, superstore_en.profit_margin, superstore_en.discount]
+    measures: [superstore_en.sales, superstore_en.profit_margin, superstore_en.quantity]
     sorts: ["superstore_en.sales desc"]
     limit: 20
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
 
-  - name: product_sku_watchlist
-    title: "SKU Watchlist"
+  - name: product_discount_pressure
+    title: "Discount Pressure by Subcategory"
+    type: looker_column
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.subcategory, superstore_en.discount_tier]
+    pivots: [superstore_en.discount_tier]
+    measures: [superstore_en.high_discount_sales]
+    sorts: ["superstore_en.high_discount_sales desc"]
+    limit: 30
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
+
+  - name: product_portfolio_watchlist
+    title: "Product Portfolio Watchlist"
     type: looker_grid
     model: superstore_en
     explore: superstore_en
-    dimensions: [superstore_en.product_name, superstore_en.category, superstore_en.subcategory]
-    measures: [superstore_en.sales, superstore_en.profit, superstore_en.quantity, superstore_en.discount, superstore_en.profit_margin]
-    sorts: ["superstore_en.profit"]
-    limit: 30
-    listen:
-      Order Date: superstore_en.order_date
-      Product Category: superstore_en.category
-      Product Subcategory: superstore_en.subcategory
-      Region: superstore_en.region
+    dimensions: [superstore_en.product_name, superstore_en.category, superstore_en.subcategory, superstore_en.discount_tier, superstore_en.profit_status]
+    measures: [superstore_en.sales, superstore_en.profit, superstore_en.loss_amount, superstore_en.quantity, superstore_en.discount, superstore_en.profit_margin]
+    sorts: ["superstore_en.loss_amount desc"]
+    limit: 35
+    listen: {Order Date: superstore_en.order_date, Product Category: superstore_en.category, Product Subcategory: superstore_en.subcategory, Discount Tier: superstore_en.discount_tier}
