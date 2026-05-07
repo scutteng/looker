@@ -302,6 +302,34 @@ view: superstore_en {
     synonyms: ["discount band", "markdown tier", "折扣等级", "折扣分层"]
   }
 
+  dimension: segment_trend_context_title {
+    hidden: yes
+    label: "Segment Trend Context Title"
+    group_label: "Dashboard Context"
+    description: "Dynamic title text for the management profitability dashboard segment trend tile."
+    type: string
+    sql: 'segment_trend_context' ;;
+    html:
+      {% assign selected_state = _filters['superstore_en.state'] %}
+      <span style="font-size:20px;font-weight:600;color:#333333;">
+        细分划分的月度销售额 - 州/省: {% if selected_state == nil or selected_state == "" %}全部{% else %}{{ selected_state }}{% endif %}
+      </span> ;;
+  }
+
+  dimension: category_trend_context_title {
+    hidden: yes
+    label: "Category Trend Context Title"
+    group_label: "Dashboard Context"
+    description: "Dynamic title text for the management profitability dashboard category trend tile."
+    type: string
+    sql: 'category_trend_context' ;;
+    html:
+      {% assign selected_state = _filters['superstore_en.state'] %}
+      <span style="font-size:20px;font-weight:600;color:#333333;">
+        按产品类别划分的月度销售额 - 州/省: {% if selected_state == nil or selected_state == "" %}全部{% else %}{{ selected_state }}{% endif %}
+      </span> ;;
+  }
+
   measure: loss_amount {
     label: "Loss Amount"
     group_label: "Financial Metrics"

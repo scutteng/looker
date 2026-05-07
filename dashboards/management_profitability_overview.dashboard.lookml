@@ -39,8 +39,10 @@
     height: 120
   - elements: [mgmt_state_profitability_map]
     height: 520
+  - elements: [mgmt_segment_context_title, mgmt_category_context_title]
+    height: 60
   - elements: [mgmt_segment_monthly_trend, mgmt_category_monthly_trend]
-    height: 420
+    height: 360
   - elements: [mgmt_profitability_detail]
     height: 380
 
@@ -113,7 +115,7 @@
     listen: {区域: superstore_en.region, 订单日期: superstore_en.order_date, 州/省: superstore_en.state, 利润状态: superstore_en.profit_status}
 
   - name: mgmt_segment_monthly_trend
-    title: "细分划分的月度销售额 - 州/省: 全部"
+    title: "细分月度销售额趋势"
     type: looker_area
     model: superstore_en
     explore: superstore_en
@@ -125,7 +127,7 @@
     listen: {区域: superstore_en.region, 订单日期: superstore_en.order_date, 州/省: superstore_en.state, 利润状态: superstore_en.profit_status}
 
   - name: mgmt_category_monthly_trend
-    title: "按产品类别划分的月度销售额 - 州/省: 全部"
+    title: "产品类别月度销售额趋势"
     type: looker_area
     model: superstore_en
     explore: superstore_en
@@ -135,6 +137,24 @@
     sorts: [superstore_en.order_month]
     limit: 500
     listen: {区域: superstore_en.region, 订单日期: superstore_en.order_date, 州/省: superstore_en.state, 利润状态: superstore_en.profit_status}
+
+  - name: mgmt_segment_context_title
+    title: ""
+    type: single_value
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.segment_trend_context_title]
+    limit: 1
+    listen: {州/省: superstore_en.state}
+
+  - name: mgmt_category_context_title
+    title: ""
+    type: single_value
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.category_trend_context_title]
+    limit: 1
+    listen: {州/省: superstore_en.state}
 
   - name: mgmt_profitability_detail
     title: "盈利能力明细 - 重点州/省、客群与品类"
