@@ -1,6 +1,6 @@
 - dashboard: ceo
   title: "CEO Dashboard"
-  description: "Executive view focused on growth, profitability, customer reach, and portfolio concentration."
+  description: "Board-style executive view for growth, market concentration, profitability, customer reach, and portfolio health."
   layout: grid
   preferred_viewer: dashboards-next
   crossfilter_enabled: true
@@ -28,12 +28,14 @@
     field: superstore_en.segment
 
   rows:
-  - elements: [ceo_sales, ceo_profit, ceo_margin, ceo_yoy_growth]
+  - elements: [ceo_sales, ceo_profit, ceo_margin, ceo_yoy_growth, ceo_customers]
     height: 120
-  - elements: [ceo_growth_trend, ceo_region_scorecard]
+  - elements: [ceo_national_map, ceo_growth_trend]
+    height: 380
+  - elements: [ceo_portfolio_mix, ceo_region_scorecard]
     height: 360
-  - elements: [ceo_segment_value, ceo_category_portfolio]
-    height: 360
+  - elements: [ceo_strategic_watchlist]
+    height: 420
 
   elements:
   - name: ceo_sales
@@ -42,10 +44,7 @@
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.sales]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_profit
     title: "Profit"
@@ -53,49 +52,67 @@
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.profit]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_margin
-    title: "Profit Margin"
+    title: "Margin"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.profit_margin]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_yoy_growth
-    title: "Sales YoY Growth"
+    title: "YoY Growth"
     type: single_value
     model: superstore_en
     explore: superstore_en
     measures: [superstore_en.sales_yoy_growth]
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
+
+  - name: ceo_customers
+    title: "Customers"
+    type: single_value
+    model: superstore_en
+    explore: superstore_en
+    measures: [superstore_en.customer_count]
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
+
+  - name: ceo_national_map
+    title: "National Performance Map"
+    type: looker_map
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.state]
+    measures: [superstore_en.sales, superstore_en.profit]
+    sorts: ["superstore_en.sales desc"]
+    limit: 50
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_growth_trend
-    title: "Sales, Profit, and YoY Growth"
+    title: "Growth and Profitability Trend"
     type: looker_line
     model: superstore_en
     explore: superstore_en
     dimensions: [superstore_en.order_month]
-    measures: [superstore_en.sales, superstore_en.profit, superstore_en.sales_yoy_growth]
+    measures: [superstore_en.sales, superstore_en.profit, superstore_en.sales_yoy_growth, superstore_en.profit_yoy_growth]
     sorts: [superstore_en.order_month]
     limit: 500
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
+
+  - name: ceo_portfolio_mix
+    title: "Portfolio Mix"
+    type: looker_pie
+    model: superstore_en
+    explore: superstore_en
+    dimensions: [superstore_en.category]
+    measures: [superstore_en.sales]
+    sorts: ["superstore_en.sales desc"]
+    limit: 10
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
   - name: ceo_region_scorecard
-    title: "Regional Scorecard"
+    title: "Regional Executive Scorecard"
     type: looker_column
     model: superstore_en
     explore: superstore_en
@@ -103,35 +120,15 @@
     measures: [superstore_en.sales, superstore_en.profit, superstore_en.customer_count, superstore_en.profit_margin]
     sorts: ["superstore_en.sales desc"]
     limit: 10
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
 
-  - name: ceo_segment_value
-    title: "Customer Segment Value"
-    type: looker_bar
-    model: superstore_en
-    explore: superstore_en
-    dimensions: [superstore_en.segment]
-    measures: [superstore_en.sales, superstore_en.profit, superstore_en.sales_per_customer]
-    sorts: ["superstore_en.sales desc"]
-    limit: 10
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
-
-  - name: ceo_category_portfolio
-    title: "Portfolio Performance"
+  - name: ceo_strategic_watchlist
+    title: "Strategic Watchlist"
     type: looker_grid
     model: superstore_en
     explore: superstore_en
-    dimensions: [superstore_en.category, superstore_en.subcategory]
-    measures: [superstore_en.sales, superstore_en.profit, superstore_en.profit_margin, superstore_en.product_count]
+    dimensions: [superstore_en.region, superstore_en.segment, superstore_en.category, superstore_en.profit_status]
+    measures: [superstore_en.sales, superstore_en.profit, superstore_en.loss_amount, superstore_en.customer_count, superstore_en.profit_margin]
     sorts: ["superstore_en.sales desc"]
-    limit: 20
-    listen:
-      Order Date: superstore_en.order_date
-      Region: superstore_en.region
-      Customer Segment: superstore_en.segment
+    limit: 30
+    listen: {Order Date: superstore_en.order_date, Region: superstore_en.region, Customer Segment: superstore_en.segment}
