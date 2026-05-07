@@ -1,6 +1,7 @@
 connection: "default_bigquery_connection"
 
 include: "/views/superstore_en.view.lkml"
+include: "/dashboards/*.dashboard.lookml"
 
 datagroup: superstore_en_default_datagroup {
   # sql_trigger: SELECT MAX(id) FROM etl_log;;
