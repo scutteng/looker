@@ -1,0 +1,6 @@
+interface:
+  display_name: "Looker AI Demo"
+  short_description: "Build and deploy AI-ready Looker demos"
+  default_prompt: "Use $looker-ai-demo to enhance this LookML project and deploy the validated result to Looker production."
+policy:
+  allow_implicit_invocation: true
