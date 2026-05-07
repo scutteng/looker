@@ -44,6 +44,7 @@ view: superstore_en {
     group_label: "Geography"
     description: "Customer country or region."
     type: string
+    map_layer_name: countries
     sql: ${TABLE}.Country_Region ;;
     synonyms: ["country", "region country", "market", "国家", "地区"]
   }
@@ -181,6 +182,7 @@ view: superstore_en {
     group_label: "Geography"
     description: "Customer state or province."
     type: string
+    map_layer_name: us_states
     sql: ${TABLE}.State ;;
     synonyms: ["province", "state province", "州", "省份"]
   }
@@ -269,6 +271,95 @@ view: superstore_en {
     sql: ${TABLE}.Sales * ${TABLE}.Discount ;;
     value_format: "$0.0,,\"M\""
     synonyms: ["discount dollars", "markdown amount", "discount value", "折扣金额"]
+  }
+
+  dimension: profit_status {
+    label: "Profit Status"
+    group_label: "Financial Metrics"
+    description: "Classifies order lines into profitable, breakeven, or loss-making lines."
+    type: string
+    sql:
+      CASE
+        WHEN ${TABLE}.Profit > 0 THEN 'Profitable'
+        WHEN ${TABLE}.Profit = 0 THEN 'Breakeven'
+        ELSE 'Loss-Making'
+      END ;;
+    synonyms: ["loss status", "profitability status", "亏损状态", "盈利状态"]
+  }
+
+  dimension: discount_tier {
+    label: "Discount Tier"
+    group_label: "Discount"
+    description: "Classifies order lines by discount intensity for pricing and margin analysis."
+    type: string
+    sql:
+      CASE
+        WHEN ${TABLE}.Discount >= 0.30 THEN 'High Discount'
+        WHEN ${TABLE}.Discount >= 0.10 THEN 'Medium Discount'
+        WHEN ${TABLE}.Discount > 0 THEN 'Low Discount'
+        ELSE 'No Discount'
+      END ;;
+    synonyms: ["discount band", "markdown tier", "折扣等级", "折扣分层"]
+  }
+
+  measure: loss_amount {
+    label: "Loss Amount"
+    group_label: "Financial Metrics"
+    description: "Positive amount of profit lost on loss-making order lines."
+    type: sum
+    sql: CASE WHEN ${TABLE}.Profit < 0 THEN -${TABLE}.Profit ELSE 0 END ;;
+    value_format: "$0.0,,\"M\""
+    synonyms: ["profit loss", "negative profit amount", "亏损金额"]
+  }
+
+  measure: loss_line_count {
+    label: "Loss Line Count"
+    group_label: "Financial Metrics"
+    description: "Number of order lines with negative profit."
+    type: sum
+    sql: CASE WHEN ${TABLE}.Profit < 0 THEN 1 ELSE 0 END ;;
+    value_format_name: decimal_0
+    synonyms: ["loss-making rows", "negative profit lines", "亏损明细数"]
+  }
+
+  measure: high_discount_sales {
+    label: "High Discount Sales"
+    group_label: "Discount"
+    description: "Sales revenue from order lines with discount of 30% or higher."
+    type: sum
+    sql: CASE WHEN ${TABLE}.Discount >= 0.30 THEN ${TABLE}.Sales ELSE 0 END ;;
+    value_format: "$0.0,,\"M\""
+    synonyms: ["sales under high discount", "high markdown sales", "高折扣销售额"]
+  }
+
+  measure: discount_to_sales_ratio {
+    label: "Discount to Sales Ratio"
+    group_label: "Discount"
+    description: "Estimated discount amount divided by total sales."
+    type: number
+    sql: ${discount_amount} / NULLIF(${sales}, 0) ;;
+    value_format_name: percent_1
+    synonyms: ["discount ratio", "discount burden", "折扣销售占比"]
+  }
+
+  measure: profit_per_order {
+    label: "Profit per Order"
+    group_label: "Financial Metrics"
+    description: "Average profit generated per distinct order."
+    type: number
+    sql: ${profit} / NULLIF(${order_count}, 0) ;;
+    value_format: "$#,##0"
+    synonyms: ["profit per transaction", "order profitability", "单均利润"]
+  }
+
+  measure: units_per_order {
+    label: "Units per Order"
+    group_label: "Order Metrics"
+    description: "Average units sold per distinct order."
+    type: number
+    sql: ${quantity} / NULLIF(${order_count}, 0) ;;
+    value_format_name: decimal_1
+    synonyms: ["items per order", "basket size", "单均件数"]
   }
 
   measure: sales_last_year {
