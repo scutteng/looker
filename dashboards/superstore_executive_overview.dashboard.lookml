@@ -12,9 +12,6 @@
     title: "Order Date"
     type: date_filter
     default_value: "2021/01/01 to 2021/12/31"
-    model: superstore_en
-    explore: superstore_en
-    field: superstore_en.order_date
   - name: "Region"
     title: "Region"
     type: field_filter
