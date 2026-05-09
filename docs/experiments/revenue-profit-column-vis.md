@@ -14,6 +14,9 @@ This experiment tests a custom Looker visualization where:
 - Value labels can be displayed inside or outside bars, using either the length/height measure or the color measure.
 - Query results can be sorted by dimension, bar measure, color measure, or left in Looker's query order.
 - Grid lines and axis titles can be toggled.
+- Axis range can be automatic or fixed.
+- Linear axes support positive and negative bar values with a zero baseline.
+- Logarithmic axes are supported for positive-only bar values.
 - A compact gradient legend can be shown for the color-bound measure.
 - Configuration options are grouped into General, Measures, Color, Style, Labels, and Axes sections when supported by the Looker visualization editor.
 
@@ -56,6 +59,8 @@ Suggested settings:
 - `Sort By`: optional
 - `Show Grid Lines`: optional
 - `Show Axis Title`: optional
+- `Axis Range`: automatic or fixed
+- `Axis Scale`: linear or logarithmic
 - `Show Gradient Legend`: optional
 
 ## Why This Needs a Custom Visualization

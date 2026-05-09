@@ -203,6 +203,40 @@ looker.plugins.visualizations.add({
       section: "Axes",
       default: true
     },
+    axis_scale: {
+      type: "string",
+      label: "Axis Scale",
+      section: "Axes",
+      display: "select",
+      values: [
+        { "Linear": "linear" },
+        { "Logarithmic": "log" }
+      ],
+      default: "linear"
+    },
+    axis_range_mode: {
+      type: "string",
+      label: "Axis Range",
+      section: "Axes",
+      display: "select",
+      values: [
+        { "Automatic": "auto" },
+        { "Fixed": "fixed" }
+      ],
+      default: "auto"
+    },
+    axis_min: {
+      type: "number",
+      label: "Axis Minimum",
+      section: "Axes",
+      default: 0
+    },
+    axis_max: {
+      type: "number",
+      label: "Axis Maximum",
+      section: "Axes",
+      default: 0
+    },
     show_axis_title: {
       type: "boolean",
       label: "Show Axis Title",
@@ -326,11 +360,19 @@ looker.plugins.visualizations.add({
     svg.setAttribute("height", height);
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
 
-    var maxHeightValue = Math.max.apply(null, rows.map(function(d) { return Math.max(0, d.heightValue); }));
+    var axis = createAxis(rows.map(function(d) { return d.heightValue; }), config);
+    if (axis.error) {
+      this.addError({
+        title: axis.error.title,
+        message: axis.error.message
+      });
+      done();
+      return;
+    }
     if (orientation === "horizontal") {
-      drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, maxHeightValue, config, colorMeasure, colorStats, tooltip, width);
+      drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, width);
     } else {
-      drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxHeightValue, config, colorMeasure, colorStats, tooltip, width);
+      drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, width);
     }
 
     drawLegend(svg, width, margin, config, colorMeasure, colorStats);
@@ -593,6 +635,42 @@ function addStyleOptions(options, config) {
     section: "Axes",
     default: true
   };
+  options.axis_scale = {
+    type: "string",
+    label: "Axis Scale",
+    section: "Axes",
+    display: "select",
+    values: [
+      { "Linear": "linear" },
+      { "Logarithmic": "log" }
+    ],
+    default: "linear"
+  };
+  options.axis_range_mode = {
+    type: "string",
+    label: "Axis Range",
+    section: "Axes",
+    display: "select",
+    values: [
+      { "Automatic": "auto" },
+      { "Fixed": "fixed" }
+    ],
+    default: "auto"
+  };
+  options.axis_min = {
+    type: "number",
+    label: "Axis Minimum",
+    section: "Axes",
+    default: 0,
+    hidden: config.axis_range_mode !== "fixed"
+  };
+  options.axis_max = {
+    type: "number",
+    label: "Axis Maximum",
+    section: "Axes",
+    default: 0,
+    hidden: config.axis_range_mode !== "fixed"
+  };
   options.show_axis_title = {
     type: "boolean",
     label: "Show Axis Title",
@@ -659,6 +737,99 @@ function measureStats(values) {
   };
 }
 
+function createAxis(values, config) {
+  var finite = values.filter(function(value) { return Number.isFinite(value); });
+  if (!finite.length) finite = [0];
+
+  var dataMin = Math.min.apply(null, finite);
+  var dataMax = Math.max.apply(null, finite);
+  var scale = config.axis_scale || "linear";
+  var rangeMode = config.axis_range_mode || "auto";
+  var min = rangeMode === "fixed" && Number.isFinite(Number(config.axis_min)) ? Number(config.axis_min) : dataMin;
+  var max = rangeMode === "fixed" && Number.isFinite(Number(config.axis_max)) ? Number(config.axis_max) : dataMax;
+
+  if (scale === "log") {
+    if (min <= 0 || max <= 0 || dataMin <= 0) {
+      return {
+        error: {
+          title: "Log axis requires positive values",
+          message: "Logarithmic scale can only be used when the bar measure and axis range are greater than 0. Switch Axis Scale to Linear or filter out non-positive values."
+        }
+      };
+    }
+    if (min === max) {
+      min = min / 10;
+      max = max * 10;
+    }
+    return {
+      scale: "log",
+      min: min,
+      max: max,
+      zero: min,
+      ticks: logTicks(min, max),
+      position: function(value, length) {
+        var clamped = Math.max(min, Math.min(max, value));
+        return (Math.log10(clamped) - Math.log10(min)) / (Math.log10(max) - Math.log10(min)) * length;
+      }
+    };
+  }
+
+  if (rangeMode === "auto") {
+    min = Math.min(0, dataMin);
+    max = Math.max(0, dataMax);
+    if (min === max) {
+      min = min - 1;
+      max = max + 1;
+    }
+  }
+
+  if (min > max) {
+    var swap = min;
+    min = max;
+    max = swap;
+  }
+  if (min === max) {
+    min = min - 1;
+    max = max + 1;
+  }
+
+  return {
+    scale: "linear",
+    min: min,
+    max: max,
+    zero: Math.max(min, Math.min(max, 0)),
+    ticks: linearTicks(min, max, 5),
+    position: function(value, length) {
+      var clamped = Math.max(min, Math.min(max, value));
+      return (clamped - min) / (max - min) * length;
+    }
+  };
+}
+
+function linearTicks(min, max, count) {
+  var ticks = [];
+  for (var i = 0; i <= count; i++) {
+    ticks.push(min + (max - min) * (i / count));
+  }
+  if (min < 0 && max > 0 && ticks.indexOf(0) === -1) ticks.push(0);
+  return ticks.sort(function(a, b) { return a - b; });
+}
+
+function logTicks(min, max) {
+  var ticks = [];
+  var start = Math.ceil(Math.log10(min));
+  var end = Math.floor(Math.log10(max));
+  ticks.push(min);
+  for (var exp = start; exp <= end; exp++) {
+    var value = Math.pow(10, exp);
+    if (value > min && value < max) ticks.push(value);
+  }
+  ticks.push(max);
+  return ticks.filter(function(value, index, arr) {
+    return index === 0 || Math.abs(value - arr[index - 1]) > 1e-9;
+  });
+}
+
 function boundMeasureColor(value, stats, config) {
   if (stats.crossesZero) {
     if (value === 0) return config.zero_color || "#CBD5E1";
@@ -713,16 +884,18 @@ function rgbToHex(r, g, b) {
   }).join("");
 }
 
-function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, config, colorMeasure, colorStats, tooltip, svgWidth) {
+function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, svgWidth) {
   var barGap = 8;
   var barWidth = Math.max(8, (innerWidth - barGap * (rows.length - 1)) / rows.length);
 
-  drawYAxis(svg, margin, innerWidth, innerHeight, maxValue, config);
+  drawYAxis(svg, margin, innerWidth, innerHeight, axis, config);
+  var zeroY = margin.top + innerHeight - axis.position(axis.zero, innerHeight);
 
   rows.forEach(function(d, i) {
     var x = margin.left + i * (barWidth + barGap);
-    var barHeight = maxValue === 0 ? 0 : (Math.max(0, d.heightValue) / maxValue) * innerHeight;
-    var y = margin.top + innerHeight - barHeight;
+    var valueY = margin.top + innerHeight - axis.position(d.heightValue, innerHeight);
+    var y = Math.min(valueY, zeroY);
+    var barHeight = Math.abs(zeroY - valueY);
     var color = barColor(d, colorMeasure, colorStats, config);
     var rect = barRect(x, y, barWidth, barHeight, color, config);
 
@@ -748,16 +921,18 @@ function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, 
   });
 }
 
-function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, config, colorMeasure, colorStats, tooltip, svgWidth) {
+function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, svgWidth) {
   var barGap = 7;
   var barHeight = Math.max(10, Math.min(34, (innerHeight - barGap * (rows.length - 1)) / rows.length));
 
-  drawXAxis(svg, margin, innerWidth, innerHeight, maxValue, config);
+  drawXAxis(svg, margin, innerWidth, innerHeight, axis, config);
+  var zeroX = margin.left + axis.position(axis.zero, innerWidth);
 
   rows.forEach(function(d, i) {
     var y = margin.top + i * (barHeight + barGap);
-    var barWidth = maxValue === 0 ? 0 : (Math.max(0, d.heightValue) / maxValue) * innerWidth;
-    var x = margin.left;
+    var valueX = margin.left + axis.position(d.heightValue, innerWidth);
+    var x = Math.min(valueX, zeroX);
+    var barWidth = Math.abs(valueX - zeroX);
     var color = barColor(d, colorMeasure, colorStats, config);
     var rect = barRect(x, y, barWidth, barHeight, color, config);
 
@@ -816,7 +991,10 @@ function verticalValueLabel(d, x, y, barWidth, barHeight, margin, innerHeight, c
   var value = valueLabelText(d, config, colorMeasure);
   var position = resolvedLabelPosition(config.value_label_position || "outside", barHeight, 30);
   var inside = position === "inside";
-  var labelY = inside ? y + 16 : y - 6;
+  var isNegative = d.heightValue < 0;
+  var labelY = inside
+    ? (isNegative ? y + barHeight - 6 : y + 16)
+    : (isNegative ? y + barHeight + 14 : y - 6);
   if (!inside && labelY < margin.top + 10) labelY = y + 16;
 
   var text = svgEl("text", {
@@ -834,12 +1012,15 @@ function horizontalValueLabel(d, x, y, barWidth, barHeight, config, colorMeasure
   var value = valueLabelText(d, config, colorMeasure);
   var position = resolvedLabelPosition(config.value_label_position || "outside", barWidth, 58);
   var inside = position === "inside";
-  var labelX = inside ? x + Math.max(8, barWidth - 8) : x + barWidth + 8;
+  var isNegative = d.heightValue < 0;
+  var labelX = inside
+    ? (isNegative ? x + 8 : x + Math.max(8, barWidth - 8))
+    : (isNegative ? x - 8 : x + barWidth + 8);
 
   var text = svgEl("text", {
     x: labelX,
     y: y + barHeight / 2 + 4,
-    "text-anchor": inside ? "end" : "start",
+    "text-anchor": inside ? (isNegative ? "start" : "end") : (isNegative ? "end" : "start"),
     fill: inside ? "#FFFFFF" : config.value_label_color || "#1F2937",
     class: "ebc-value-label"
   });
@@ -858,11 +1039,9 @@ function resolvedLabelPosition(position, availableSize, minimumInsideSize) {
   return position;
 }
 
-function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue, config) {
-  var ticks = 5;
-  for (var i = 0; i <= ticks; i++) {
-    var value = maxValue * (i / ticks);
-    var y = margin.top + innerHeight - (innerHeight * i / ticks);
+function drawYAxis(svg, margin, innerWidth, innerHeight, axis, config) {
+  axis.ticks.forEach(function(value) {
+    var y = margin.top + innerHeight - axis.position(value, innerHeight);
     if (truthy(config.show_grid, true)) {
       svg.appendChild(svgEl("line", {
         x1: margin.left,
@@ -880,22 +1059,20 @@ function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue, config) {
     });
     text.textContent = compactNumber(value);
     svg.appendChild(text);
-  }
+  });
   svg.appendChild(svgEl("line", {
     x1: margin.left,
     x2: margin.left + innerWidth,
-    y1: margin.top + innerHeight,
-    y2: margin.top + innerHeight,
+    y1: margin.top + innerHeight - axis.position(axis.zero, innerHeight),
+    y2: margin.top + innerHeight - axis.position(axis.zero, innerHeight),
     stroke: "#94A3B8"
   }));
   drawAxisTitle(svg, margin, innerWidth, innerHeight, config, "vertical");
 }
 
-function drawXAxis(svg, margin, innerWidth, innerHeight, maxValue, config) {
-  var ticks = 5;
-  for (var i = 0; i <= ticks; i++) {
-    var value = maxValue * (i / ticks);
-    var x = margin.left + (innerWidth * i / ticks);
+function drawXAxis(svg, margin, innerWidth, innerHeight, axis, config) {
+  axis.ticks.forEach(function(value, i) {
+    var x = margin.left + axis.position(value, innerWidth);
     if (truthy(config.show_grid, true)) {
       svg.appendChild(svgEl("line", {
         x1: x,
@@ -913,10 +1090,10 @@ function drawXAxis(svg, margin, innerWidth, innerHeight, maxValue, config) {
     });
     text.textContent = compactNumber(value);
     svg.appendChild(text);
-  }
+  });
   svg.appendChild(svgEl("line", {
-    x1: margin.left,
-    x2: margin.left,
+    x1: margin.left + axis.position(axis.zero, innerWidth),
+    x2: margin.left + axis.position(axis.zero, innerWidth),
     y1: margin.top,
     y2: margin.top + innerHeight,
     stroke: "#94A3B8"
