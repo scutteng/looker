@@ -1,13 +1,12 @@
-# Revenue Columns Colored by Profit
+# Enhanced Bar Chart
 
 This experiment tests a custom Looker visualization where:
 
-- Bar height is driven by the first measure, usually `superstore_en.sales`.
-- Bar color is driven by the second measure, usually `superstore_en.profit`.
-- Positive profit uses a blue scale.
-- Negative profit uses an orange scale.
-- Larger positive profit becomes deeper blue.
-- Larger negative profit becomes deeper orange.
+- Bar height is driven by the first measure.
+- Bar color can use a single configured color.
+- Bar color can also be bound to a selected measure.
+- When the bound color measure crosses zero, positive values use one color scale and negative values use another color scale.
+- When the bound color measure is all positive or all negative, one continuous gradient is used from the minimum value to the maximum value.
 
 ## Suggested Explore Query
 
@@ -31,8 +30,15 @@ Limit:
 
 Visualization:
 
-- `Revenue Columns Colored by Profit`
+- `Enhanced Bar Chart`
+
+Suggested settings:
+
+- `Bar Color Mode`: `Bind to Measure`
+- `Color Measure`: `Second Measure`
+- Positive colors: light blue to dark blue
+- Negative colors: light orange to dark orange
 
 ## Why This Needs a Custom Visualization
 
-Looker's native column chart assigns colors primarily by series or palette. This experiment needs point-level coloring based on another measure. That is a semantic encoding rule rather than a normal series color rule, so it is implemented as a custom visualization in `visualizations/revenue_profit_columns.js`.
+Looker's native column chart assigns colors primarily by series or palette. This experiment needs point-level coloring based on another measure. That is a semantic encoding rule rather than a normal series color rule, so it is implemented as a custom visualization in `visualizations/enhanced_barchart.js`.

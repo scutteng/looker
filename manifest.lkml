@@ -1,7 +1,7 @@
 new_lookml_runtime: yes
 
 visualization: {
-  id: "revenue_profit_columns"
-  label: "Revenue Columns Colored by Profit"
-  file: "visualizations/revenue_profit_columns.js"
+  id: "enhanced_barchart"
+  label: "Enhanced Bar Chart"
+  file: "visualizations/enhanced_barchart.js"
 }
