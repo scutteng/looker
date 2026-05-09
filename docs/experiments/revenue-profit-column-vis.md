@@ -3,10 +3,12 @@
 This experiment tests a custom Looker visualization where:
 
 - Bar height is driven by the first measure.
+- Bar height can be rebound to any queried measure in the visualization settings.
 - Bar color can use a single configured color.
 - Bar color can also be bound to a selected measure.
 - When the bound color measure crosses zero, positive values use one color scale and negative values use another color scale.
 - When the bound color measure is all positive or all negative, one continuous gradient is used from the minimum value to the maximum value.
+- Zero values can use a dedicated zero color.
 
 ## Suggested Explore Query
 
@@ -34,10 +36,12 @@ Visualization:
 
 Suggested settings:
 
+- `Bar Length / Height Measure`: `Sales`
 - `Bar Color Mode`: `Bind to Measure`
-- `Color Measure`: `Second Measure`
+- `Color Measure`: `Profit`
 - Positive colors: light blue to dark blue
 - Negative colors: light orange to dark orange
+- Zero color: gray
 
 ## Why This Needs a Custom Visualization
 

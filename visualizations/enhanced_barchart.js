@@ -12,6 +12,15 @@ looker.plugins.visualizations.add({
       label: "Max Bars",
       default: 30
     },
+    height_measure: {
+      type: "string",
+      label: "Bar Length / Height Measure",
+      display: "select",
+      values: [
+        { "First Measure": "0" }
+      ],
+      default: "0"
+    },
     color_mode: {
       type: "string",
       label: "Bar Color Mode",
@@ -27,6 +36,7 @@ looker.plugins.visualizations.add({
       label: "Color Measure",
       display: "select",
       values: [
+        { "First Measure": "0" },
         { "Second Measure": "1" },
         { "Third Measure": "2" },
         { "Fourth Measure": "3" }
@@ -63,17 +73,11 @@ looker.plugins.visualizations.add({
       display: "color",
       default: "#C65F00"
     },
-    same_sign_light: {
+    zero_color: {
       type: "string",
-      label: "Same-Sign Light Color",
+      label: "Zero Color",
       display: "color",
-      default: "#C7D2FE"
-    },
-    same_sign_dark: {
-      type: "string",
-      label: "Same-Sign Dark Color",
-      display: "color",
-      default: "#4338CA"
+      default: "#CBD5E1"
     }
   },
 
@@ -106,7 +110,6 @@ looker.plugins.visualizations.add({
     var dimensions = queryResponse.fields.dimension_like || [];
     var measures = queryResponse.fields.measure_like || [];
     var colorMode = config.color_mode || "measure";
-    var colorMeasureIndex = Number(config.color_measure || 1);
 
     if (dimensions.length < 1 || measures.length < 1) {
       this.addError({
@@ -116,6 +119,10 @@ looker.plugins.visualizations.add({
       done();
       return;
     }
+
+    var heightMeasureIndex = measureIndexFromConfig(config.height_measure, measures, 0);
+    var defaultColorIndex = measures.length > 1 ? 1 : 0;
+    var colorMeasureIndex = measureIndexFromConfig(config.color_measure, measures, defaultColorIndex);
 
     if (colorMode === "measure" && !measures[colorMeasureIndex]) {
       this.addError({
@@ -127,7 +134,7 @@ looker.plugins.visualizations.add({
     }
 
     var dimension = dimensions[0];
-    var heightMeasure = measures[0];
+    var heightMeasure = measures[heightMeasureIndex];
     var colorMeasure = colorMode === "measure" ? measures[colorMeasureIndex] : null;
     var maxBars = Math.max(1, Number(config.max_bars || 30));
 
@@ -148,6 +155,9 @@ looker.plugins.visualizations.add({
       done();
       return;
     }
+
+    var colorStats = colorMeasure ? measureStats(rows.map(function(d) { return d.colorValue; })) : null;
+    registerDynamicOptions(this, measures, config, colorStats);
 
     var root = element.querySelector(".ebc-root");
     var title = root.querySelector(".ebc-title");
@@ -174,7 +184,6 @@ looker.plugins.visualizations.add({
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
 
     var maxHeightValue = Math.max.apply(null, rows.map(function(d) { return Math.max(0, d.heightValue); }));
-    var colorStats = colorMeasure ? measureStats(rows.map(function(d) { return d.colorValue; })) : null;
     var barGap = 8;
     var barWidth = Math.max(8, (innerWidth - barGap * (rows.length - 1)) / rows.length);
 
@@ -236,6 +245,123 @@ function fieldLabel(field) {
   return field.label_short || field.label || field.name;
 }
 
+function measureIndexFromConfig(value, measures, fallback) {
+  var index = Number(value);
+  if (!Number.isFinite(index) || index < 0 || index >= measures.length) return fallback;
+  return index;
+}
+
+function registerDynamicOptions(vis, measures, config, colorStats) {
+  if (!vis || typeof vis.trigger !== "function") return;
+
+  var options = buildOptions(measures, config, colorStats);
+  var signature = JSON.stringify(options);
+  if (vis._lastOptionsSignature === signature) return;
+  vis._lastOptionsSignature = signature;
+  vis.trigger("registerOptions", options);
+}
+
+function buildOptions(measures, config, colorStats) {
+  var measureValues = measureOptionValues(measures);
+  var colorMode = config.color_mode || "measure";
+  var options = {
+    title: {
+      type: "string",
+      label: "Title",
+      default: "Enhanced Bar Chart"
+    },
+    max_bars: {
+      type: "number",
+      label: "Max Bars",
+      default: 30
+    },
+    height_measure: {
+      type: "string",
+      label: "Bar Length / Height Measure",
+      display: "select",
+      values: measureValues,
+      default: "0"
+    },
+    color_mode: {
+      type: "string",
+      label: "Bar Color Mode",
+      display: "select",
+      values: [
+        { "Single Color": "single" },
+        { "Bind to Measure": "measure" }
+      ],
+      default: "measure"
+    }
+  };
+
+  if (colorMode === "single") {
+    options.single_color = {
+      type: "string",
+      label: "Single Color",
+      display: "color",
+      default: "#2F80ED"
+    };
+    return options;
+  }
+
+  options.color_measure = {
+    type: "string",
+    label: "Color Measure",
+    display: "select",
+    values: measureValues,
+    default: measures.length > 1 ? "1" : "0"
+  };
+
+  if (!colorStats || colorStats.crossesZero || colorStats.hasPositive) {
+    options.positive_light = {
+      type: "string",
+      label: "Positive Light Color",
+      display: "color",
+      default: "#A7D8FF"
+    };
+    options.positive_dark = {
+      type: "string",
+      label: "Positive Dark Color",
+      display: "color",
+      default: "#0B5CAD"
+    };
+  }
+
+  if (!colorStats || colorStats.crossesZero || colorStats.hasNegative) {
+    options.negative_light = {
+      type: "string",
+      label: "Negative Light Color",
+      display: "color",
+      default: "#FFD5A1"
+    };
+    options.negative_dark = {
+      type: "string",
+      label: "Negative Dark Color",
+      display: "color",
+      default: "#C65F00"
+    };
+  }
+
+  if (!colorStats || colorStats.hasZero) {
+    options.zero_color = {
+      type: "string",
+      label: "Zero Color",
+      display: "color",
+      default: "#CBD5E1"
+    };
+  }
+
+  return options;
+}
+
+function measureOptionValues(measures) {
+  return measures.map(function(measure, index) {
+    var option = {};
+    option[(index + 1) + ". " + fieldLabel(measure)] = String(index);
+    return option;
+  });
+}
+
 function measureStats(values) {
   var min = Math.min.apply(null, values);
   var max = Math.max.apply(null, values);
@@ -243,6 +369,9 @@ function measureStats(values) {
     min: min,
     max: max,
     crossesZero: min < 0 && max > 0,
+    hasPositive: max > 0,
+    hasNegative: min < 0,
+    hasZero: values.some(function(value) { return value === 0; }),
     allPositive: min >= 0,
     allNegative: max <= 0
   };
@@ -250,7 +379,7 @@ function measureStats(values) {
 
 function boundMeasureColor(value, stats, config) {
   if (stats.crossesZero) {
-    if (value === 0) return "#CBD5E1";
+    if (value === 0) return config.zero_color || "#CBD5E1";
     if (value > 0) {
       return interpolateHex(
         config.positive_light || "#A7D8FF",
@@ -269,10 +398,11 @@ function boundMeasureColor(value, stats, config) {
   var t = range === 0 ? 1 : (value - stats.min) / range;
   var light = stats.allNegative
     ? config.negative_light || "#FFD5A1"
-    : config.same_sign_light || "#C7D2FE";
+    : config.positive_light || "#A7D8FF";
   var dark = stats.allNegative
     ? config.negative_dark || "#C65F00"
-    : config.same_sign_dark || "#4338CA";
+    : config.positive_dark || "#0B5CAD";
+  if (value === 0) return config.zero_color || "#CBD5E1";
   return interpolateHex(light, dark, t);
 }
 
@@ -344,15 +474,16 @@ function drawLegend(svg, width, margin, config, colorMeasure, stats) {
   var items = stats.crossesZero
     ? [
         { label: "Negative", color: config.negative_dark || "#C65F00" },
+        { label: "Zero", color: config.zero_color || "#CBD5E1" },
         { label: "Positive", color: config.positive_dark || "#0B5CAD" }
       ]
     : [
-        { label: "Low " + fieldLabel(colorMeasure), color: stats.allNegative ? config.negative_light || "#FFD5A1" : config.same_sign_light || "#C7D2FE" },
-        { label: "High " + fieldLabel(colorMeasure), color: stats.allNegative ? config.negative_dark || "#C65F00" : config.same_sign_dark || "#4338CA" }
+        { label: "Low " + fieldLabel(colorMeasure), color: stats.allNegative ? config.negative_light || "#FFD5A1" : config.positive_light || "#A7D8FF" },
+        { label: "High " + fieldLabel(colorMeasure), color: stats.allNegative ? config.negative_dark || "#C65F00" : config.positive_dark || "#0B5CAD" }
       ];
 
   items.forEach(function(item, i) {
-    var x = width - margin.right - 270 + i * 135;
+    var x = width - margin.right - (items.length * 118) + i * 118;
     svg.appendChild(svgEl("rect", { x: x, y: y - 10, width: 14, height: 14, fill: item.color, rx: 2 }));
     var text = svgEl("text", { x: x + 20, y: y + 1, class: "ebc-legend" });
     text.textContent = item.label;
