@@ -14,6 +14,31 @@ looker.plugins.visualizations.add({
       section: "Data",
       default: 30
     },
+    canvas_size_mode: {
+      type: "string",
+      label: "Canvas Size",
+      section: "Data",
+      display: "select",
+      values: [
+        { "Auto Fit Tile": "auto" },
+        { "Fixed Height": "fixed_height" },
+        { "Fixed Width": "fixed_width" },
+        { "Fixed Width + Height": "fixed_both" }
+      ],
+      default: "auto"
+    },
+    fixed_canvas_height: {
+      type: "number",
+      label: "Fixed Canvas Height",
+      section: "Data",
+      default: 520
+    },
+    fixed_canvas_width: {
+      type: "number",
+      label: "Fixed Canvas Width",
+      section: "Data",
+      default: 960
+    },
     orientation: {
       type: "string",
       label: "Orientation",
@@ -257,7 +282,7 @@ looker.plugins.visualizations.add({
       ".ebc-root{font-family:Inter,Roboto,Arial,sans-serif;color:#1f2937;width:100%;height:100%;box-sizing:border-box;padding:16px;background:#fff;}",
       ".ebc-title{font-size:18px;font-weight:700;margin:0 0 4px;}",
       ".ebc-subtitle{font-size:12px;color:#64748b;margin:0 0 12px;}",
-      ".ebc-chart-wrap{position:relative;width:100%;height:calc(100% - 52px);min-height:0;}",
+      ".ebc-chart-wrap{position:relative;width:100%;height:calc(100% - 52px);min-height:0;overflow:hidden;}",
       ".ebc-tooltip{position:absolute;pointer-events:none;display:none;background:#111827;color:#fff;border-radius:4px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 8px 24px rgba(15,23,42,.22);z-index:2;}",
       ".ebc-axis text{fill:#64748b;font-size:11px;}",
       ".ebc-grid{stroke:#e8edf3;stroke-width:1;}",
@@ -470,6 +495,33 @@ function buildOptions(measures, config, colorStats) {
       label: "Max Bars",
       section: "Data",
       default: 30
+    },
+    canvas_size_mode: {
+      type: "string",
+      label: "Canvas Size",
+      section: "Data",
+      display: "select",
+      values: [
+        { "Auto Fit Tile": "auto" },
+        { "Fixed Height": "fixed_height" },
+        { "Fixed Width": "fixed_width" },
+        { "Fixed Width + Height": "fixed_both" }
+      ],
+      default: "auto"
+    },
+    fixed_canvas_height: {
+      type: "number",
+      label: "Fixed Canvas Height",
+      section: "Data",
+      default: 520,
+      hidden: config.canvas_size_mode !== "fixed_height" && config.canvas_size_mode !== "fixed_both"
+    },
+    fixed_canvas_width: {
+      type: "number",
+      label: "Fixed Canvas Width",
+      section: "Data",
+      default: 960,
+      hidden: config.canvas_size_mode !== "fixed_width" && config.canvas_size_mode !== "fixed_both"
     },
     height_measure: {
       type: "string",
@@ -991,10 +1043,22 @@ function renderEnhancedBarChart(element, state) {
   while (svg.firstChild) svg.removeChild(svg.firstChild);
 
   var orientation = config.orientation || "vertical";
-  var width = Math.max(260, wrap.clientWidth || element.clientWidth || 900);
-  var height = Math.max(orientation === "horizontal" ? 120 : 180, wrap.clientHeight || element.clientHeight - 64 || 420);
+  var wrapWidth = Math.max(260, wrap.clientWidth || element.clientWidth || 900);
+  var wrapHeight = Math.max(120, wrap.clientHeight || element.clientHeight - 64 || 420);
+  var sizeMode = config.canvas_size_mode || "auto";
+  var fixedWidth = Math.max(320, Number(config.fixed_canvas_width || 960));
+  var fixedHeight = Math.max(160, Number(config.fixed_canvas_height || 520));
+  var width = sizeMode === "fixed_width" || sizeMode === "fixed_both" ? fixedWidth : wrapWidth;
+  var height = sizeMode === "fixed_height" || sizeMode === "fixed_both" ? fixedHeight : wrapHeight;
   var hasGroupedRows = orientation === "horizontal" && rows.some(function(d) { return d.labelParts && d.labelParts.length > 1; });
   var compactHorizontal = orientation === "horizontal" && height < 220;
+  if (sizeMode === "fixed_width" || sizeMode === "fixed_both") {
+    width = Math.max(width, readableWidth(rows, orientation, hasGroupedRows));
+  }
+  if (sizeMode === "fixed_height" || sizeMode === "fixed_both") {
+    height = Math.max(height, readableHeight(rows, orientation, hasGroupedRows, truthy(config.show_axis_title, true)));
+  }
+  compactHorizontal = orientation === "horizontal" && height < 220;
   var horizontalLeft = hasGroupedRows
     ? Math.min(320, Math.max(190, Math.floor(width * 0.34)))
     : Math.min(190, Math.max(112, Math.floor(width * 0.24)));
@@ -1012,8 +1076,10 @@ function renderEnhancedBarChart(element, state) {
   svg.setAttribute("width", width);
   svg.setAttribute("height", height);
   svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-  svg.style.width = "100%";
-  svg.style.height = "100%";
+  svg.style.width = width + "px";
+  svg.style.height = height + "px";
+  wrap.style.overflowX = width > wrapWidth + 1 ? "auto" : "hidden";
+  wrap.style.overflowY = height > wrapHeight + 1 ? "auto" : "hidden";
 
   var axis = createAxis(rows.map(function(d) { return d.heightValue; }), config);
   if (axis.error) {
@@ -1028,6 +1094,19 @@ function renderEnhancedBarChart(element, state) {
   }
 
   drawLegend(svg, width, margin, config, colorMeasure, colorStats);
+}
+
+function readableHeight(rows, orientation, hasGroupedRows, showAxisTitle) {
+  if (orientation !== "horizontal") return 180;
+  var rowHeight = hasGroupedRows ? 25 : 23;
+  var top = hasGroupedRows ? 46 : 30;
+  var bottom = showAxisTitle ? 58 : 42;
+  return Math.max(120, top + bottom + rows.length * rowHeight);
+}
+
+function readableWidth(rows, orientation, hasGroupedRows) {
+  if (orientation === "horizontal") return hasGroupedRows ? 760 : 520;
+  return Math.max(520, 160 + rows.length * 28);
 }
 
 function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, svgWidth) {

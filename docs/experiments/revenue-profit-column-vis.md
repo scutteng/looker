@@ -25,6 +25,8 @@ This experiment tests a custom Looker visualization where:
 - Pivoted measures fall back to the row total when present, or sum the visible pivot cells when no row total exists.
 - The SVG resizes with the Looker tile canvas through a `ResizeObserver`.
 - Flat horizontal tiles compress row height and margins so bars do not overflow into the x-axis area.
+- Canvas sizing can stay in auto-fit mode or use fixed height, fixed width, or fixed width plus height.
+- Fixed canvas modes preserve readable row and label sizes; when the content is larger than the tile, the visualization scrolls instead of crushing the bars.
 - Inside value labels automatically choose light or dark text based on the bar color for readability.
 
 ## Suggested Explore Query
@@ -54,6 +56,7 @@ Visualization:
 Suggested settings:
 
 - `Orientation`: `Vertical Columns` or `Horizontal Bars`
+- `Canvas Size`: auto fit, fixed height, fixed width, or fixed width plus height
 - `Bar Length / Height Measure`: `Sales`
 - `Bar Color Mode`: `Bind to Measure`
 - `Color Measure`: `Profit`
