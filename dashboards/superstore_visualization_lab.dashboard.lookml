@@ -44,7 +44,7 @@
   rows:
   - elements: [lab_sales, lab_profit, lab_margin, lab_orders]
     height: 110
-  - elements: [lab_enhanced_product_profit, lab_state_profit_map]
+  - elements: [lab_product_profit_standard, lab_state_profit_map]
     height: 520
   - elements: [lab_monthly_trend, lab_segment_region_mix]
     height: 360
@@ -104,31 +104,15 @@
       Customer Segment: superstore_en.segment
       Product Category: superstore_en.category
 
-  - name: lab_enhanced_product_profit
-    title: "Enhanced Product Profitability: Sales Length, Profit Color"
-    type: enhanced_barchart
+  - name: lab_product_profit_standard
+    title: "Product Profitability Standard Bar"
+    type: looker_bar
     model: superstore_en
     explore: superstore_en
     dimensions: [superstore_en.category, superstore_en.subcategory, superstore_en.product_name]
     measures: [superstore_en.sales, superstore_en.profit]
     sorts: ["superstore_en.sales desc"]
     limit: 50
-    orientation: horizontal
-    canvas_size_mode: fixed_height
-    fixed_canvas_height: 900
-    height_measure: "0"
-    color_mode: measure
-    color_measure: "1"
-    sort_by: height
-    sort_direction: desc
-    show_value_labels: true
-    value_label_measure: height
-    value_label_position: outside
-    value_label_format: compact
-    show_gradient_legend: true
-    show_grid: true
-    show_axis_title: true
-    axis_title: "Sales"
     listen:
       Order Date: superstore_en.order_date
       Region: superstore_en.region
