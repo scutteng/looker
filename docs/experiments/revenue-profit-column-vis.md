@@ -18,7 +18,8 @@ This experiment tests a custom Looker visualization where:
 - Linear axes support positive and negative bar values with a zero baseline.
 - Logarithmic axes are supported for positive-only bar values.
 - A compact gradient legend can be shown for the color-bound measure.
-- Configuration options are grouped into General, Measures, Color, Style, Labels, and Axes sections when supported by the Looker visualization editor.
+- Configuration options are grouped into Layout, Measures, Color, Axes, Labels, and Bar Style sections when supported by the Looker visualization editor.
+- Inside value labels automatically choose light or dark text based on the bar color for readability.
 
 ## Suggested Explore Query
 
@@ -46,7 +47,7 @@ Visualization:
 
 Suggested settings:
 
-- `Orientation`: `Vertical Columns` or `Horizontal Bars`
+- `Orientation`: `Vertical Columns [|||]` or `Horizontal Bars [===]`
 - `Bar Length / Height Measure`: `Sales`
 - `Bar Color Mode`: `Bind to Measure`
 - `Color Measure`: `Profit`
