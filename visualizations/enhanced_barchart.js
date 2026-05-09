@@ -5,30 +5,30 @@ looker.plugins.visualizations.add({
     title: {
       type: "string",
       label: "Title",
-      section: "Layout",
+      section: "Data",
       default: "Enhanced Bar Chart"
     },
     max_bars: {
       type: "number",
       label: "Max Bars",
-      section: "Layout",
+      section: "Data",
       default: 30
     },
     orientation: {
       type: "string",
       label: "Orientation",
-      section: "Layout",
+      section: "Data",
       display: "select",
       values: [
-        { "Vertical Columns [|||]": "vertical" },
-        { "Horizontal Bars [===]": "horizontal" }
+        { "Vertical Columns": "vertical" },
+        { "Horizontal Bars": "horizontal" }
       ],
       default: "vertical"
     },
     sort_by: {
       type: "string",
       label: "Sort By",
-      section: "Layout",
+      section: "Data",
       display: "select",
       values: [
         { "Query Order": "query" },
@@ -41,7 +41,7 @@ looker.plugins.visualizations.add({
     sort_direction: {
       type: "string",
       label: "Sort Direction",
-      section: "Layout",
+      section: "Data",
       display: "select",
       values: [
         { "Descending": "desc" },
@@ -52,7 +52,7 @@ looker.plugins.visualizations.add({
     height_measure: {
       type: "string",
       label: "Bar Length / Height Measure",
-      section: "Measures",
+      section: "Data",
       display: "select",
       values: [
         { "First Measure": "0" }
@@ -62,7 +62,7 @@ looker.plugins.visualizations.add({
     color_mode: {
       type: "string",
       label: "Bar Color Mode",
-      section: "Color",
+      section: "Data",
       display: "select",
       values: [
         { "Single Color": "single" },
@@ -73,7 +73,7 @@ looker.plugins.visualizations.add({
     color_measure: {
       type: "string",
       label: "Color Measure",
-      section: "Color",
+      section: "Data",
       display: "select",
       values: [
         { "First Measure": "0" },
@@ -86,80 +86,80 @@ looker.plugins.visualizations.add({
     single_color: {
       type: "string",
       label: "Single Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#2F80ED"
     },
     positive_light: {
       type: "string",
       label: "Positive Light Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#A7D8FF"
     },
     positive_dark: {
       type: "string",
       label: "Positive Dark Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#0B5CAD"
     },
     negative_light: {
       type: "string",
       label: "Negative Light Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#FFD5A1"
     },
     negative_dark: {
       type: "string",
       label: "Negative Dark Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#C65F00"
     },
     zero_color: {
       type: "string",
       label: "Zero Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#CBD5E1"
     },
     show_gradient_legend: {
       type: "boolean",
       label: "Show Gradient Legend",
-      section: "Color",
+      section: "Style",
       default: true
     },
     show_border: {
       type: "boolean",
       label: "Show Bar Border",
-      section: "Bar Style",
+      section: "Style",
       default: false
     },
     border_color: {
       type: "string",
       label: "Border Color",
-      section: "Bar Style",
+      section: "Style",
       display: "color",
       default: "#1F2937"
     },
     border_width: {
       type: "number",
       label: "Border Width",
-      section: "Bar Style",
+      section: "Style",
       default: 1
     },
     show_value_labels: {
       type: "boolean",
       label: "Show Value Labels",
-      section: "Labels",
+      section: "Style",
       default: false
     },
     value_label_measure: {
       type: "string",
       label: "Value Label Measure",
-      section: "Labels",
+      section: "Style",
       display: "select",
       values: [
         { "Bar Length / Height Measure": "height" },
@@ -170,7 +170,7 @@ looker.plugins.visualizations.add({
     value_label_position: {
       type: "string",
       label: "Value Label Position",
-      section: "Labels",
+      section: "Style",
       display: "select",
       values: [
         { "Outside Bar": "outside" },
@@ -182,7 +182,7 @@ looker.plugins.visualizations.add({
     value_label_format: {
       type: "string",
       label: "Value Label Format",
-      section: "Labels",
+      section: "Style",
       display: "select",
       values: [
         { "Compact": "compact" },
@@ -193,20 +193,20 @@ looker.plugins.visualizations.add({
     value_label_color: {
       type: "string",
       label: "Value Label Color",
-      section: "Labels",
+      section: "Style",
       display: "color",
       default: "#1F2937"
     },
     show_grid: {
       type: "boolean",
       label: "Show Grid Lines",
-      section: "Axes",
+      section: "Axis",
       default: true
     },
     axis_scale: {
       type: "string",
       label: "Axis Scale",
-      section: "Axes",
+      section: "Axis",
       display: "select",
       values: [
         { "Linear": "linear" },
@@ -217,7 +217,7 @@ looker.plugins.visualizations.add({
     axis_range_mode: {
       type: "string",
       label: "Axis Range",
-      section: "Axes",
+      section: "Axis",
       display: "select",
       values: [
         { "Automatic": "auto" },
@@ -228,25 +228,25 @@ looker.plugins.visualizations.add({
     axis_min: {
       type: "number",
       label: "Axis Minimum",
-      section: "Axes",
+      section: "Axis",
       default: 0
     },
     axis_max: {
       type: "number",
       label: "Axis Maximum",
-      section: "Axes",
+      section: "Axis",
       default: 0
     },
     show_axis_title: {
       type: "boolean",
       label: "Show Axis Title",
-      section: "Axes",
+      section: "Axis",
       default: true
     },
     axis_title: {
       type: "string",
       label: "Axis Title",
-      section: "Axes",
+      section: "Axis",
       default: ""
     }
   },
@@ -264,6 +264,8 @@ looker.plugins.visualizations.add({
       ".ebc-bar{transition:opacity .15s ease,stroke-width .15s ease;}",
       ".ebc-bar:hover{opacity:.82;stroke:#111827;stroke-width:1.5;}",
       ".ebc-label{fill:#334155;font-size:11px;}",
+      ".ebc-label-parent{fill:#94a3b8;font-size:10px;}",
+      ".ebc-label-child{fill:#334155;font-size:11px;font-weight:600;}",
       ".ebc-value-label{font-size:11px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}",
       ".ebc-legend{font-size:11px;fill:#64748b;}",
       ".ebc-axis-title{fill:#475569;font-size:12px;font-weight:600;}",
@@ -305,7 +307,6 @@ looker.plugins.visualizations.add({
       return;
     }
 
-    var dimension = dimensions[0];
     var heightMeasure = measures[heightMeasureIndex];
     var colorMeasure = colorMode === "measure" ? measures[colorMeasureIndex] : null;
     config._heightMeasure = heightMeasure;
@@ -313,8 +314,15 @@ looker.plugins.visualizations.add({
 
     var rows = data.slice(0, maxBars).map(function(row) {
       var colorValue = colorMeasure ? Number(cellValue(row, colorMeasure.name)) || 0 : null;
+      var labelParts = dimensions.map(function(dimension) {
+        return cleanLabel(cellValue(row, dimension.name));
+      }).filter(function(label) {
+        return label !== "";
+      });
+      if (!labelParts.length) labelParts = ["(empty)"];
       return {
-        label: cellValue(row, dimension.name),
+        label: labelParts.join(" / "),
+        labelParts: labelParts,
         heightValue: Number(cellValue(row, heightMeasure.name)) || 0,
         colorValue: colorValue
       };
@@ -386,6 +394,10 @@ function cellValue(row, fieldName) {
   return cell.value == null ? cell.rendered || cell.html || "" : cell.value;
 }
 
+function cleanLabel(value) {
+  return String(value == null ? "" : value).trim();
+}
+
 function fieldLabel(field) {
   return field.label_short || field.label || field.name;
 }
@@ -413,30 +425,38 @@ function buildOptions(measures, config, colorStats) {
     title: {
       type: "string",
       label: "Title",
-      section: "Layout",
+      section: "Data",
       default: "Enhanced Bar Chart"
-    },
-    max_bars: {
-      type: "number",
-      label: "Max Bars",
-      section: "Layout",
-      default: 30
     },
     orientation: {
       type: "string",
       label: "Orientation",
-      section: "Layout",
+      section: "Data",
       display: "select",
       values: [
-        { "Vertical Columns [|||]": "vertical" },
-        { "Horizontal Bars [===]": "horizontal" }
+        { "Vertical Columns": "vertical" },
+        { "Horizontal Bars": "horizontal" }
       ],
       default: "vertical"
+    },
+    max_bars: {
+      type: "number",
+      label: "Max Bars",
+      section: "Data",
+      default: 30
+    },
+    height_measure: {
+      type: "string",
+      label: "Bar Length / Height Measure",
+      section: "Data",
+      display: "select",
+      values: measureValues,
+      default: "0"
     },
     sort_by: {
       type: "string",
       label: "Sort By",
-      section: "Layout",
+      section: "Data",
       display: "select",
       values: [
         { "Query Order": "query" },
@@ -449,7 +469,7 @@ function buildOptions(measures, config, colorStats) {
     sort_direction: {
       type: "string",
       label: "Sort Direction",
-      section: "Layout",
+      section: "Data",
       display: "select",
       values: [
         { "Descending": "desc" },
@@ -457,18 +477,10 @@ function buildOptions(measures, config, colorStats) {
       ],
       default: "desc"
     },
-    height_measure: {
-      type: "string",
-      label: "Bar Length / Height Measure",
-      section: "Measures",
-      display: "select",
-      values: measureValues,
-      default: "0"
-    },
     color_mode: {
       type: "string",
       label: "Bar Color Mode",
-      section: "Color",
+      section: "Data",
       display: "select",
       values: [
         { "Single Color": "single" },
@@ -482,7 +494,7 @@ function buildOptions(measures, config, colorStats) {
     options.single_color = {
       type: "string",
       label: "Single Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#2F80ED"
     };
@@ -493,7 +505,7 @@ function buildOptions(measures, config, colorStats) {
   options.color_measure = {
     type: "string",
     label: "Color Measure",
-    section: "Color",
+    section: "Data",
     display: "select",
     values: measureValues,
     default: measures.length > 1 ? "1" : "0"
@@ -503,14 +515,14 @@ function buildOptions(measures, config, colorStats) {
     options.positive_light = {
       type: "string",
       label: "Positive Light Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#A7D8FF"
     };
     options.positive_dark = {
       type: "string",
       label: "Positive Dark Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#0B5CAD"
     };
@@ -520,14 +532,14 @@ function buildOptions(measures, config, colorStats) {
     options.negative_light = {
       type: "string",
       label: "Negative Light Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#FFD5A1"
     };
     options.negative_dark = {
       type: "string",
       label: "Negative Dark Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#C65F00"
     };
@@ -537,7 +549,7 @@ function buildOptions(measures, config, colorStats) {
     options.zero_color = {
       type: "string",
       label: "Zero Color",
-      section: "Color",
+      section: "Style",
       display: "color",
       default: "#CBD5E1"
     };
@@ -545,7 +557,7 @@ function buildOptions(measures, config, colorStats) {
   options.show_gradient_legend = {
     type: "boolean",
     label: "Show Gradient Legend",
-    section: "Color",
+    section: "Style",
     default: true
   };
 
@@ -558,72 +570,16 @@ function addStyleOptions(options, config) {
   var labelsVisible = truthy(config.show_value_labels, false);
   var axisTitleVisible = truthy(config.show_axis_title, true);
 
-  options.show_grid = {
-    type: "boolean",
-    label: "Show Grid Lines",
-    section: "Axes",
-    default: true
-  };
-  options.axis_scale = {
-    type: "string",
-    label: "Axis Scale",
-    section: "Axes",
-    display: "select",
-    values: [
-      { "Linear": "linear" },
-      { "Logarithmic": "log" }
-    ],
-    default: "linear"
-  };
-  options.axis_range_mode = {
-    type: "string",
-    label: "Axis Range",
-    section: "Axes",
-    display: "select",
-    values: [
-      { "Automatic": "auto" },
-      { "Fixed": "fixed" }
-    ],
-    default: "auto"
-  };
-  options.axis_min = {
-    type: "number",
-    label: "Axis Minimum",
-    section: "Axes",
-    default: 0,
-    hidden: config.axis_range_mode !== "fixed"
-  };
-  options.axis_max = {
-    type: "number",
-    label: "Axis Maximum",
-    section: "Axes",
-    default: 0,
-    hidden: config.axis_range_mode !== "fixed"
-  };
-  options.show_axis_title = {
-    type: "boolean",
-    label: "Show Axis Title",
-    section: "Axes",
-    default: true
-  };
-  options.axis_title = {
-    type: "string",
-    label: "Axis Title",
-    section: "Axes",
-    default: "",
-    hidden: !axisTitleVisible
-  };
-
   options.show_value_labels = {
     type: "boolean",
     label: "Show Value Labels",
-    section: "Labels",
+    section: "Style",
     default: false
   };
   options.value_label_measure = {
     type: "string",
     label: "Value Label Measure",
-    section: "Labels",
+    section: "Style",
     display: "select",
     values: [
       { "Bar Length / Height Measure": "height" },
@@ -635,7 +591,7 @@ function addStyleOptions(options, config) {
   options.value_label_position = {
     type: "string",
     label: "Value Label Position",
-    section: "Labels",
+    section: "Style",
     display: "select",
     values: [
       { "Outside Bar": "outside" },
@@ -648,7 +604,7 @@ function addStyleOptions(options, config) {
   options.value_label_format = {
     type: "string",
     label: "Value Label Format",
-    section: "Labels",
+    section: "Style",
     display: "select",
     values: [
       { "Compact": "compact" },
@@ -660,7 +616,7 @@ function addStyleOptions(options, config) {
   options.value_label_color = {
     type: "string",
     label: "Value Label Color",
-    section: "Labels",
+    section: "Style",
     display: "color",
     default: "#1F2937",
     hidden: !labelsVisible
@@ -669,13 +625,13 @@ function addStyleOptions(options, config) {
   options.show_border = {
     type: "boolean",
     label: "Show Bar Border",
-    section: "Bar Style",
+    section: "Style",
     default: false
   };
   options.border_color = {
     type: "string",
     label: "Border Color",
-    section: "Bar Style",
+    section: "Style",
     display: "color",
     default: "#1F2937",
     hidden: !borderVisible
@@ -683,9 +639,65 @@ function addStyleOptions(options, config) {
   options.border_width = {
     type: "number",
     label: "Border Width",
-    section: "Bar Style",
+    section: "Style",
     default: 1,
     hidden: !borderVisible
+  };
+
+  options.show_grid = {
+    type: "boolean",
+    label: "Show Grid Lines",
+    section: "Axis",
+    default: true
+  };
+  options.axis_scale = {
+    type: "string",
+    label: "Axis Scale",
+    section: "Axis",
+    display: "select",
+    values: [
+      { "Linear": "linear" },
+      { "Logarithmic": "log" }
+    ],
+    default: "linear"
+  };
+  options.axis_range_mode = {
+    type: "string",
+    label: "Axis Range",
+    section: "Axis",
+    display: "select",
+    values: [
+      { "Automatic": "auto" },
+      { "Fixed": "fixed" }
+    ],
+    default: "auto"
+  };
+  options.axis_min = {
+    type: "number",
+    label: "Axis Minimum",
+    section: "Axis",
+    default: 0,
+    hidden: config.axis_range_mode !== "fixed"
+  };
+  options.axis_max = {
+    type: "number",
+    label: "Axis Maximum",
+    section: "Axis",
+    default: 0,
+    hidden: config.axis_range_mode !== "fixed"
+  };
+  options.show_axis_title = {
+    type: "boolean",
+    label: "Show Axis Title",
+    section: "Axis",
+    default: true
+  };
+  options.axis_title = {
+    type: "string",
+    label: "Axis Title",
+    section: "Axis",
+    default: "",
+    hidden: !axisTitleVisible
   };
 }
 
@@ -910,17 +922,7 @@ function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, conf
       svg.appendChild(label);
     }
 
-    if (barWidth > 22) {
-      var category = svgEl("text", {
-        x: x + barWidth / 2,
-        y: margin.top + innerHeight + 18,
-        "text-anchor": "end",
-        transform: "rotate(-42 " + (x + barWidth / 2) + " " + (margin.top + innerHeight + 18) + ")",
-        class: "ebc-label"
-      });
-      category.textContent = truncate(d.label, 18);
-      svg.appendChild(category);
-    }
+    drawVerticalCategoryLabel(svg, d, x, barWidth, margin, innerHeight);
   });
 }
 
@@ -942,20 +944,82 @@ function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, co
     attachTooltip(rect, tooltip, svgWidth, d, config._heightMeasure, colorMeasure);
     svg.appendChild(rect);
 
-    var category = svgEl("text", {
-      x: margin.left - 12,
-      y: y + barHeight / 2 + 4,
-      "text-anchor": "end",
-      class: "ebc-label"
-    });
-    category.textContent = truncate(d.label, 24);
-    svg.appendChild(category);
+    drawHorizontalCategoryLabel(svg, d, margin.left - 12, y, barHeight);
 
     if (truthy(config.show_value_labels, false)) {
       var label = horizontalValueLabel(d, x, y, barWidth, barHeight, config, colorMeasure, color);
       svg.appendChild(label);
     }
   });
+}
+
+function drawVerticalCategoryLabel(svg, d, x, barWidth, margin, innerHeight) {
+  if (barWidth <= 22) return;
+
+  var cx = x + barWidth / 2;
+  var baseY = margin.top + innerHeight;
+  if (!d.labelParts || d.labelParts.length < 2 || barWidth < 34) {
+    var rotated = svgEl("text", {
+      x: cx,
+      y: baseY + 18,
+      "text-anchor": "end",
+      transform: "rotate(-42 " + cx + " " + (baseY + 18) + ")",
+      class: "ebc-label"
+    });
+    rotated.textContent = truncate(d.label, 18);
+    svg.appendChild(rotated);
+    return;
+  }
+
+  var parent = svgEl("text", {
+    x: cx,
+    y: baseY + 18,
+    "text-anchor": "middle",
+    class: "ebc-label-parent"
+  });
+  parent.textContent = truncate(d.labelParts.slice(0, -1).join(" / "), Math.max(8, Math.floor(barWidth / 4)));
+  svg.appendChild(parent);
+
+  var child = svgEl("text", {
+    x: cx,
+    y: baseY + 34,
+    "text-anchor": "middle",
+    class: "ebc-label-child"
+  });
+  child.textContent = truncate(d.labelParts[d.labelParts.length - 1], Math.max(8, Math.floor(barWidth / 4)));
+  svg.appendChild(child);
+}
+
+function drawHorizontalCategoryLabel(svg, d, x, y, barHeight) {
+  if (!d.labelParts || d.labelParts.length < 2 || barHeight < 20) {
+    var single = svgEl("text", {
+      x: x,
+      y: y + barHeight / 2 + 4,
+      "text-anchor": "end",
+      class: "ebc-label"
+    });
+    single.textContent = truncate(d.label, 24);
+    svg.appendChild(single);
+    return;
+  }
+
+  var parent = svgEl("text", {
+    x: x,
+    y: y + barHeight / 2 - 3,
+    "text-anchor": "end",
+    class: "ebc-label-parent"
+  });
+  parent.textContent = truncate(d.labelParts.slice(0, -1).join(" / "), 26);
+  svg.appendChild(parent);
+
+  var child = svgEl("text", {
+    x: x,
+    y: y + barHeight / 2 + 11,
+    "text-anchor": "end",
+    class: "ebc-label-child"
+  });
+  child.textContent = truncate(d.labelParts[d.labelParts.length - 1], 26);
+  svg.appendChild(child);
 }
 
 function barColor(d, colorMeasure, colorStats, config) {
@@ -1239,8 +1303,9 @@ function drawGradientLegend(svg, width, margin, config, colorMeasure, stats) {
 }
 
 function tooltipHtml(d, heightMeasure, colorMeasure) {
+  var title = d.label || "(empty)";
   var html = [
-    "<strong>" + escapeHtml(d.label) + "</strong>",
+    "<strong>" + escapeHtml(title) + "</strong>",
     "<br>" + escapeHtml(fieldLabel(heightMeasure)) + ": " + formatNumber(d.heightValue)
   ];
   if (colorMeasure) {
