@@ -9,6 +9,9 @@ This experiment tests a custom Looker visualization where:
 - When the bound color measure crosses zero, positive values use one color scale and negative values use another color scale.
 - When the bound color measure is all positive or all negative, one continuous gradient is used from the minimum value to the maximum value.
 - Zero values can use a dedicated zero color.
+- The chart can render as vertical columns or horizontal bars.
+- Bars can optionally have borders.
+- Value labels can be displayed inside or outside bars, using either the length/height measure or the color measure.
 
 ## Suggested Explore Query
 
@@ -36,12 +39,16 @@ Visualization:
 
 Suggested settings:
 
+- `Orientation`: `Vertical Columns` or `Horizontal Bars`
 - `Bar Length / Height Measure`: `Sales`
 - `Bar Color Mode`: `Bind to Measure`
 - `Color Measure`: `Profit`
 - Positive colors: light blue to dark blue
 - Negative colors: light orange to dark orange
 - Zero color: gray
+- `Show Bar Border`: optional
+- `Show Value Labels`: optional
+- `Value Label Position`: outside, inside, or auto
 
 ## Why This Needs a Custom Visualization
 

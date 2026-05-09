@@ -12,6 +12,16 @@ looker.plugins.visualizations.add({
       label: "Max Bars",
       default: 30
     },
+    orientation: {
+      type: "string",
+      label: "Orientation",
+      display: "select",
+      values: [
+        { "Vertical Columns": "vertical" },
+        { "Horizontal Bars": "horizontal" }
+      ],
+      default: "vertical"
+    },
     height_measure: {
       type: "string",
       label: "Bar Length / Height Measure",
@@ -78,6 +88,74 @@ looker.plugins.visualizations.add({
       label: "Zero Color",
       display: "color",
       default: "#CBD5E1"
+    },
+    show_border: {
+      type: "string",
+      label: "Show Bar Border",
+      display: "select",
+      values: [
+        { "No": "no" },
+        { "Yes": "yes" }
+      ],
+      default: "no"
+    },
+    border_color: {
+      type: "string",
+      label: "Border Color",
+      display: "color",
+      default: "#1F2937"
+    },
+    border_width: {
+      type: "number",
+      label: "Border Width",
+      default: 1
+    },
+    show_value_labels: {
+      type: "string",
+      label: "Show Value Labels",
+      display: "select",
+      values: [
+        { "No": "no" },
+        { "Yes": "yes" }
+      ],
+      default: "no"
+    },
+    value_label_measure: {
+      type: "string",
+      label: "Value Label Measure",
+      display: "select",
+      values: [
+        { "Bar Length / Height Measure": "height" },
+        { "Color Measure": "color" }
+      ],
+      default: "height"
+    },
+    value_label_position: {
+      type: "string",
+      label: "Value Label Position",
+      display: "select",
+      values: [
+        { "Outside Bar": "outside" },
+        { "Inside Bar": "inside" },
+        { "Auto": "auto" }
+      ],
+      default: "outside"
+    },
+    value_label_format: {
+      type: "string",
+      label: "Value Label Format",
+      display: "select",
+      values: [
+        { "Compact": "compact" },
+        { "Full": "full" }
+      ],
+      default: "compact"
+    },
+    value_label_color: {
+      type: "string",
+      label: "Value Label Color",
+      display: "color",
+      default: "#1F2937"
     }
   },
 
@@ -94,6 +172,7 @@ looker.plugins.visualizations.add({
       ".ebc-bar{transition:opacity .15s ease,stroke-width .15s ease;}",
       ".ebc-bar:hover{opacity:.82;stroke:#111827;stroke-width:1.5;}",
       ".ebc-label{fill:#334155;font-size:11px;}",
+      ".ebc-value-label{font-size:11px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}",
       ".ebc-legend{font-size:11px;fill:#64748b;}",
       "</style>",
       "<div class='ebc-root'>",
@@ -136,6 +215,7 @@ looker.plugins.visualizations.add({
     var dimension = dimensions[0];
     var heightMeasure = measures[heightMeasureIndex];
     var colorMeasure = colorMode === "measure" ? measures[colorMeasureIndex] : null;
+    config._heightMeasure = heightMeasure;
     var maxBars = Math.max(1, Number(config.max_bars || 30));
 
     var rows = data.slice(0, maxBars).map(function(row) {
@@ -173,9 +253,12 @@ looker.plugins.visualizations.add({
 
     while (svg.firstChild) svg.removeChild(svg.firstChild);
 
+    var orientation = config.orientation || "vertical";
     var width = Math.max(640, wrap.clientWidth || element.clientWidth || 900);
     var height = Math.max(260, wrap.clientHeight || element.clientHeight - 64 || 420);
-    var margin = { top: 24, right: 28, bottom: 94, left: 72 };
+    var margin = orientation === "horizontal"
+      ? { top: 30, right: 112, bottom: 42, left: 190 }
+      : { top: 24, right: 92, bottom: 94, left: 72 };
     var innerWidth = width - margin.left - margin.right;
     var innerHeight = height - margin.top - margin.bottom;
 
@@ -184,51 +267,11 @@ looker.plugins.visualizations.add({
     svg.setAttribute("viewBox", "0 0 " + width + " " + height);
 
     var maxHeightValue = Math.max.apply(null, rows.map(function(d) { return Math.max(0, d.heightValue); }));
-    var barGap = 8;
-    var barWidth = Math.max(8, (innerWidth - barGap * (rows.length - 1)) / rows.length);
-
-    drawYAxis(svg, margin, innerWidth, innerHeight, maxHeightValue);
-
-    rows.forEach(function(d, i) {
-      var x = margin.left + i * (barWidth + barGap);
-      var barHeight = maxHeightValue === 0 ? 0 : (Math.max(0, d.heightValue) / maxHeightValue) * innerHeight;
-      var y = margin.top + innerHeight - barHeight;
-      var color = colorMeasure
-        ? boundMeasureColor(d.colorValue, colorStats, config)
-        : config.single_color || "#2F80ED";
-
-      var rect = svgEl("rect", {
-        x: x,
-        y: y,
-        width: barWidth,
-        height: barHeight,
-        fill: color,
-        class: "ebc-bar",
-        rx: 2
-      });
-      rect.addEventListener("mousemove", function(evt) {
-        tooltip.style.display = "block";
-        tooltip.style.left = Math.min(evt.offsetX + 14, width - 230) + "px";
-        tooltip.style.top = Math.max(evt.offsetY - 18, 6) + "px";
-        tooltip.innerHTML = tooltipHtml(d, heightMeasure, colorMeasure);
-      });
-      rect.addEventListener("mouseleave", function() {
-        tooltip.style.display = "none";
-      });
-      svg.appendChild(rect);
-
-      if (barWidth > 22) {
-        var label = svgEl("text", {
-          x: x + barWidth / 2,
-          y: margin.top + innerHeight + 18,
-          "text-anchor": "end",
-          transform: "rotate(-42 " + (x + barWidth / 2) + " " + (margin.top + innerHeight + 18) + ")",
-          class: "ebc-label"
-        });
-        label.textContent = truncate(d.label, 18);
-        svg.appendChild(label);
-      }
-    });
+    if (orientation === "horizontal") {
+      drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, maxHeightValue, config, colorMeasure, colorStats, tooltip, width);
+    } else {
+      drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxHeightValue, config, colorMeasure, colorStats, tooltip, width);
+    }
 
     drawLegend(svg, width, margin, config, colorMeasure, colorStats);
     done();
@@ -275,6 +318,16 @@ function buildOptions(measures, config, colorStats) {
       label: "Max Bars",
       default: 30
     },
+    orientation: {
+      type: "string",
+      label: "Orientation",
+      display: "select",
+      values: [
+        { "Vertical Columns": "vertical" },
+        { "Horizontal Bars": "horizontal" }
+      ],
+      default: "vertical"
+    },
     height_measure: {
       type: "string",
       label: "Bar Length / Height Measure",
@@ -301,6 +354,7 @@ function buildOptions(measures, config, colorStats) {
       display: "color",
       default: "#2F80ED"
     };
+    addStyleOptions(options);
     return options;
   }
 
@@ -351,7 +405,79 @@ function buildOptions(measures, config, colorStats) {
     };
   }
 
+  addStyleOptions(options);
   return options;
+}
+
+function addStyleOptions(options) {
+  options.show_border = {
+    type: "string",
+    label: "Show Bar Border",
+    display: "select",
+    values: [
+      { "No": "no" },
+      { "Yes": "yes" }
+    ],
+    default: "no"
+  };
+  options.border_color = {
+    type: "string",
+    label: "Border Color",
+    display: "color",
+    default: "#1F2937"
+  };
+  options.border_width = {
+    type: "number",
+    label: "Border Width",
+    default: 1
+  };
+  options.show_value_labels = {
+    type: "string",
+    label: "Show Value Labels",
+    display: "select",
+    values: [
+      { "No": "no" },
+      { "Yes": "yes" }
+    ],
+    default: "no"
+  };
+  options.value_label_measure = {
+    type: "string",
+    label: "Value Label Measure",
+    display: "select",
+    values: [
+      { "Bar Length / Height Measure": "height" },
+      { "Color Measure": "color" }
+    ],
+    default: "height"
+  };
+  options.value_label_position = {
+    type: "string",
+    label: "Value Label Position",
+    display: "select",
+    values: [
+      { "Outside Bar": "outside" },
+      { "Inside Bar": "inside" },
+      { "Auto": "auto" }
+    ],
+    default: "outside"
+  };
+  options.value_label_format = {
+    type: "string",
+    label: "Value Label Format",
+    display: "select",
+    values: [
+      { "Compact": "compact" },
+      { "Full": "full" }
+    ],
+    default: "compact"
+  };
+  options.value_label_color = {
+    type: "string",
+    label: "Value Label Color",
+    display: "color",
+    default: "#1F2937"
+  };
 }
 
 function measureOptionValues(measures) {
@@ -431,6 +557,151 @@ function rgbToHex(r, g, b) {
   }).join("");
 }
 
+function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, config, colorMeasure, colorStats, tooltip, svgWidth) {
+  var barGap = 8;
+  var barWidth = Math.max(8, (innerWidth - barGap * (rows.length - 1)) / rows.length);
+
+  drawYAxis(svg, margin, innerWidth, innerHeight, maxValue);
+
+  rows.forEach(function(d, i) {
+    var x = margin.left + i * (barWidth + barGap);
+    var barHeight = maxValue === 0 ? 0 : (Math.max(0, d.heightValue) / maxValue) * innerHeight;
+    var y = margin.top + innerHeight - barHeight;
+    var color = barColor(d, colorMeasure, colorStats, config);
+    var rect = barRect(x, y, barWidth, barHeight, color, config);
+
+    attachTooltip(rect, tooltip, svgWidth, d, config._heightMeasure, colorMeasure);
+    svg.appendChild(rect);
+
+    if (config.show_value_labels === "yes") {
+      var label = verticalValueLabel(d, x, y, barWidth, barHeight, margin, innerHeight, config, colorMeasure);
+      svg.appendChild(label);
+    }
+
+    if (barWidth > 22) {
+      var category = svgEl("text", {
+        x: x + barWidth / 2,
+        y: margin.top + innerHeight + 18,
+        "text-anchor": "end",
+        transform: "rotate(-42 " + (x + barWidth / 2) + " " + (margin.top + innerHeight + 18) + ")",
+        class: "ebc-label"
+      });
+      category.textContent = truncate(d.label, 18);
+      svg.appendChild(category);
+    }
+  });
+}
+
+function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, config, colorMeasure, colorStats, tooltip, svgWidth) {
+  var barGap = 7;
+  var barHeight = Math.max(10, Math.min(34, (innerHeight - barGap * (rows.length - 1)) / rows.length));
+
+  drawXAxis(svg, margin, innerWidth, innerHeight, maxValue);
+
+  rows.forEach(function(d, i) {
+    var y = margin.top + i * (barHeight + barGap);
+    var barWidth = maxValue === 0 ? 0 : (Math.max(0, d.heightValue) / maxValue) * innerWidth;
+    var x = margin.left;
+    var color = barColor(d, colorMeasure, colorStats, config);
+    var rect = barRect(x, y, barWidth, barHeight, color, config);
+
+    attachTooltip(rect, tooltip, svgWidth, d, config._heightMeasure, colorMeasure);
+    svg.appendChild(rect);
+
+    var category = svgEl("text", {
+      x: margin.left - 12,
+      y: y + barHeight / 2 + 4,
+      "text-anchor": "end",
+      class: "ebc-label"
+    });
+    category.textContent = truncate(d.label, 24);
+    svg.appendChild(category);
+
+    if (config.show_value_labels === "yes") {
+      var label = horizontalValueLabel(d, x, y, barWidth, barHeight, config, colorMeasure);
+      svg.appendChild(label);
+    }
+  });
+}
+
+function barColor(d, colorMeasure, colorStats, config) {
+  return colorMeasure
+    ? boundMeasureColor(d.colorValue, colorStats, config)
+    : config.single_color || "#2F80ED";
+}
+
+function barRect(x, y, width, height, fill, config) {
+  return svgEl("rect", {
+    x: x,
+    y: y,
+    width: Math.max(0, width),
+    height: Math.max(0, height),
+    fill: fill,
+    stroke: config.show_border === "yes" ? config.border_color || "#1F2937" : "none",
+    "stroke-width": config.show_border === "yes" ? Math.max(0, Number(config.border_width || 1)) : 0,
+    class: "ebc-bar",
+    rx: 2
+  });
+}
+
+function attachTooltip(rect, tooltip, svgWidth, d, heightMeasure, colorMeasure) {
+  rect.addEventListener("mousemove", function(evt) {
+    tooltip.style.display = "block";
+    tooltip.style.left = Math.min(evt.offsetX + 14, svgWidth - 230) + "px";
+    tooltip.style.top = Math.max(evt.offsetY - 18, 6) + "px";
+    tooltip.innerHTML = tooltipHtml(d, heightMeasure, colorMeasure);
+  });
+  rect.addEventListener("mouseleave", function() {
+    tooltip.style.display = "none";
+  });
+}
+
+function verticalValueLabel(d, x, y, barWidth, barHeight, margin, innerHeight, config, colorMeasure) {
+  var value = valueLabelText(d, config, colorMeasure);
+  var position = resolvedLabelPosition(config.value_label_position || "outside", barHeight, 30);
+  var inside = position === "inside";
+  var labelY = inside ? y + 16 : y - 6;
+  if (!inside && labelY < margin.top + 10) labelY = y + 16;
+
+  var text = svgEl("text", {
+    x: x + barWidth / 2,
+    y: labelY,
+    "text-anchor": "middle",
+    fill: inside ? "#FFFFFF" : config.value_label_color || "#1F2937",
+    class: "ebc-value-label"
+  });
+  text.textContent = value;
+  return text;
+}
+
+function horizontalValueLabel(d, x, y, barWidth, barHeight, config, colorMeasure) {
+  var value = valueLabelText(d, config, colorMeasure);
+  var position = resolvedLabelPosition(config.value_label_position || "outside", barWidth, 58);
+  var inside = position === "inside";
+  var labelX = inside ? x + Math.max(8, barWidth - 8) : x + barWidth + 8;
+
+  var text = svgEl("text", {
+    x: labelX,
+    y: y + barHeight / 2 + 4,
+    "text-anchor": inside ? "end" : "start",
+    fill: inside ? "#FFFFFF" : config.value_label_color || "#1F2937",
+    class: "ebc-value-label"
+  });
+  text.textContent = value;
+  return text;
+}
+
+function valueLabelText(d, config, colorMeasure) {
+  var useColor = config.value_label_measure === "color" && colorMeasure;
+  var value = useColor ? d.colorValue : d.heightValue;
+  return config.value_label_format === "full" ? formatNumber(value) : compactNumber(value);
+}
+
+function resolvedLabelPosition(position, availableSize, minimumInsideSize) {
+  if (position === "auto") return availableSize >= minimumInsideSize ? "inside" : "outside";
+  return position;
+}
+
 function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue) {
   var ticks = 5;
   for (var i = 0; i <= ticks; i++) {
@@ -456,6 +727,36 @@ function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue) {
     x1: margin.left,
     x2: margin.left + innerWidth,
     y1: margin.top + innerHeight,
+    y2: margin.top + innerHeight,
+    stroke: "#94A3B8"
+  }));
+}
+
+function drawXAxis(svg, margin, innerWidth, innerHeight, maxValue) {
+  var ticks = 5;
+  for (var i = 0; i <= ticks; i++) {
+    var value = maxValue * (i / ticks);
+    var x = margin.left + (innerWidth * i / ticks);
+    svg.appendChild(svgEl("line", {
+      x1: x,
+      x2: x,
+      y1: margin.top,
+      y2: margin.top + innerHeight,
+      class: "ebc-grid"
+    }));
+    var text = svgEl("text", {
+      x: x,
+      y: margin.top + innerHeight + 20,
+      "text-anchor": i === 0 ? "start" : "middle",
+      class: "ebc-axis"
+    });
+    text.textContent = compactNumber(value);
+    svg.appendChild(text);
+  }
+  svg.appendChild(svgEl("line", {
+    x1: margin.left,
+    x2: margin.left,
+    y1: margin.top,
     y2: margin.top + innerHeight,
     stroke: "#94A3B8"
   }));
