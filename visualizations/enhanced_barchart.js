@@ -52,16 +52,16 @@ looker.plugins.visualizations.add({
     },
     sort_by: {
       type: "string",
-      label: "Sort By",
+      label: "Axis Sort By",
       section: "Data",
       display: "select",
       values: [
         { "Query Order": "query" },
-        { "Dimension": "dimension" },
+        { "Dimension Label": "dimension" },
         { "Bar Measure": "height" },
         { "Color Measure": "color" }
       ],
-      default: "query"
+      default: "height"
     },
     sort_direction: {
       type: "string",
@@ -356,8 +356,7 @@ looker.plugins.visualizations.add({
         colorValue: colorValue
       };
     });
-    sortRows(rows, config);
-    if ((config.orientation || "vertical") === "horizontal") groupRowsByParent(rows, config);
+    sortHierarchicalRows(rows, config);
 
     if (!rows.length) {
       this.addError({
@@ -533,16 +532,16 @@ function buildOptions(measures, config, colorStats) {
     },
     sort_by: {
       type: "string",
-      label: "Sort By",
+      label: "Axis Sort By",
       section: "Data",
       display: "select",
       values: [
         { "Query Order": "query" },
-        { "Dimension": "dimension" },
+        { "Dimension Label": "dimension" },
         { "Bar Measure": "height" },
         { "Color Measure": "color" }
       ],
-      default: "query"
+      default: "height"
     },
     sort_direction: {
       type: "string",
@@ -787,38 +786,57 @@ function measureOptionValues(measures) {
   });
 }
 
+function sortHierarchicalRows(rows, config) {
+  if (!rows.some(function(row) { return row.labelParts && row.labelParts.length > 1; })) {
+    sortRows(rows, config);
+    return;
+  }
+
+  var sortBy = config.sort_by || "height";
+  if (sortBy === "query") return;
+  var direction = config.sort_direction === "asc" ? 1 : -1;
+  rows.sort(function(a, b) {
+    var levels = Math.max(a.labelParts.length, b.labelParts.length);
+    for (var level = 0; level < levels - 1; level++) {
+      var av = hierarchySortValue(rows, a, level, sortBy);
+      var bv = hierarchySortValue(rows, b, level, sortBy);
+      var compare = compareSortValues(av, bv, direction, sortBy === "dimension");
+      if (compare !== 0) return compare;
+    }
+
+    return compareSortValues(sortValue(a, sortBy), sortValue(b, sortBy), direction, sortBy === "dimension");
+  });
+}
+
+function hierarchySortValue(rows, row, level, sortBy) {
+  var key = hierarchyKey(row, level);
+  if (sortBy === "dimension") return key;
+  var total = 0;
+  rows.forEach(function(candidate) {
+    if (hierarchyKey(candidate, level) === key) total += numericSortValue(candidate, sortBy);
+  });
+  return total;
+}
+
+function hierarchyKey(row, level) {
+  var parts = row.labelParts || [row.label || ""];
+  return parts.slice(0, level + 1).join("\u0001");
+}
+
+function compareSortValues(a, b, direction, forceString) {
+  if (forceString || typeof a === "string" || typeof b === "string") {
+    return String(a).localeCompare(String(b)) * direction;
+  }
+  return (a - b) * direction;
+}
+
 function sortRows(rows, config) {
-  var sortBy = config.sort_by || "query";
+  var sortBy = config.sort_by || "height";
   if (sortBy === "query") return;
 
   var direction = config.sort_direction === "asc" ? 1 : -1;
   rows.sort(function(a, b) {
-    var av = sortValue(a, sortBy);
-    var bv = sortValue(b, sortBy);
-    if (typeof av === "string" || typeof bv === "string") {
-      return String(av).localeCompare(String(bv)) * direction;
-    }
-    return (av - bv) * direction;
-  });
-}
-
-function groupRowsByParent(rows, config) {
-  if (!rows.some(function(row) { return row.labelParts && row.labelParts.length > 1; })) return;
-
-  var direction = config.sort_direction === "asc" ? 1 : -1;
-  rows.sort(function(a, b) {
-    var parentCompare = parentKey(a).localeCompare(parentKey(b));
-    if (parentCompare !== 0) return parentCompare;
-
-    var sortBy = config.sort_by || "query";
-    if (sortBy === "query") return childLabel(a).localeCompare(childLabel(b));
-
-    var av = sortValue(a, sortBy);
-    var bv = sortValue(b, sortBy);
-    if (typeof av === "string" || typeof bv === "string") {
-      return String(av).localeCompare(String(bv)) * direction;
-    }
-    return (av - bv) * direction;
+    return compareSortValues(sortValue(a, sortBy), sortValue(b, sortBy), direction, sortBy === "dimension");
   });
 }
 
@@ -836,6 +854,11 @@ function sortValue(row, sortBy) {
   if (sortBy === "dimension") return row.label || "";
   if (sortBy === "color") return row.colorValue == null ? row.heightValue : row.colorValue;
   return row.heightValue;
+}
+
+function numericSortValue(row, sortBy) {
+  var value = sortValue(row, sortBy);
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
 function truthy(value, defaultValue) {
@@ -1050,17 +1073,18 @@ function renderEnhancedBarChart(element, state) {
   var fixedHeight = Math.max(160, Number(config.fixed_canvas_height || 520));
   var width = sizeMode === "fixed_width" || sizeMode === "fixed_both" ? fixedWidth : wrapWidth;
   var height = sizeMode === "fixed_height" || sizeMode === "fixed_both" ? fixedHeight : wrapHeight;
-  var hasGroupedRows = orientation === "horizontal" && rows.some(function(d) { return d.labelParts && d.labelParts.length > 1; });
+  var dimensionLevels = maxDimensionLevels(rows);
+  var hasGroupedRows = orientation === "horizontal" && dimensionLevels > 1;
   var compactHorizontal = orientation === "horizontal" && height < 220;
   if (sizeMode === "fixed_width" || sizeMode === "fixed_both") {
-    width = Math.max(width, readableWidth(rows, orientation, hasGroupedRows));
+    width = Math.max(width, readableWidth(rows, orientation, dimensionLevels));
   }
   if (sizeMode === "fixed_height" || sizeMode === "fixed_both") {
-    height = Math.max(height, readableHeight(rows, orientation, hasGroupedRows, truthy(config.show_axis_title, true)));
+    height = Math.max(height, readableHeight(rows, orientation, dimensionLevels, truthy(config.show_axis_title, true)));
   }
   compactHorizontal = orientation === "horizontal" && height < 220;
   var horizontalLeft = hasGroupedRows
-    ? Math.min(320, Math.max(190, Math.floor(width * 0.34)))
+    ? Math.min(520, Math.max(190, dimensionLevels * 108, Math.floor(width * 0.12 * dimensionLevels)))
     : Math.min(190, Math.max(112, Math.floor(width * 0.24)));
   var margin = orientation === "horizontal"
     ? {
@@ -1069,7 +1093,7 @@ function renderEnhancedBarChart(element, state) {
         bottom: compactHorizontal ? (truthy(config.show_axis_title, true) ? 44 : 30) : (truthy(config.show_axis_title, true) ? 58 : 42),
         left: horizontalLeft
       }
-    : { top: 24, right: 104, bottom: 94, left: truthy(config.show_axis_title, true) ? 88 : 72 };
+    : { top: 24, right: 104, bottom: verticalAxisBottom(dimensionLevels, truthy(config.show_axis_title, true)), left: truthy(config.show_axis_title, true) ? 88 : 72 };
   var innerWidth = Math.max(80, width - margin.left - margin.right);
   var innerHeight = Math.max(compactHorizontal ? 24 : 60, height - margin.top - margin.bottom);
 
@@ -1096,17 +1120,27 @@ function renderEnhancedBarChart(element, state) {
   drawLegend(svg, width, margin, config, colorMeasure, colorStats);
 }
 
-function readableHeight(rows, orientation, hasGroupedRows, showAxisTitle) {
-  if (orientation !== "horizontal") return 180;
-  var rowHeight = hasGroupedRows ? 25 : 23;
-  var top = hasGroupedRows ? 46 : 30;
+function readableHeight(rows, orientation, dimensionLevels, showAxisTitle) {
+  if (orientation !== "horizontal") return 180 + Math.max(0, dimensionLevels - 1) * 18;
+  var rowHeight = dimensionLevels > 1 ? 25 : 23;
+  var top = dimensionLevels > 1 ? 46 : 30;
   var bottom = showAxisTitle ? 58 : 42;
   return Math.max(120, top + bottom + rows.length * rowHeight);
 }
 
-function readableWidth(rows, orientation, hasGroupedRows) {
-  if (orientation === "horizontal") return hasGroupedRows ? 760 : 520;
-  return Math.max(520, 160 + rows.length * 28);
+function readableWidth(rows, orientation, dimensionLevels) {
+  if (orientation === "horizontal") return dimensionLevels > 1 ? Math.max(760, 430 + dimensionLevels * 108) : 520;
+  return Math.max(520, 160 + rows.length * Math.max(28, dimensionLevels * 14));
+}
+
+function maxDimensionLevels(rows) {
+  return rows.reduce(function(max, row) {
+    return Math.max(max, row.labelParts ? row.labelParts.length : 1);
+  }, 1);
+}
+
+function verticalAxisBottom(dimensionLevels, showAxisTitle) {
+  return (showAxisTitle ? 62 : 44) + Math.max(1, dimensionLevels) * 20;
 }
 
 function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, svgWidth) {
@@ -1132,7 +1166,7 @@ function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, conf
       svg.appendChild(label);
     }
 
-    drawVerticalCategoryLabel(svg, d, x, barWidth, margin, innerHeight);
+    drawVerticalCategoryLabel(svg, d, rows, i, x, barWidth, barGap, margin, innerHeight);
   });
 }
 
@@ -1169,12 +1203,12 @@ function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, co
   });
 }
 
-function drawVerticalCategoryLabel(svg, d, x, barWidth, margin, innerHeight) {
+function drawVerticalCategoryLabel(svg, d, rows, index, x, barWidth, barGap, margin, innerHeight) {
   if (barWidth <= 22) return;
 
   var cx = x + barWidth / 2;
   var baseY = margin.top + innerHeight;
-  if (!d.labelParts || d.labelParts.length < 2 || barWidth < 34) {
+  if (!d.labelParts || d.labelParts.length < 2) {
     var rotated = svgEl("text", {
       x: cx,
       y: baseY + 18,
@@ -1182,47 +1216,53 @@ function drawVerticalCategoryLabel(svg, d, x, barWidth, margin, innerHeight) {
       transform: "rotate(-42 " + cx + " " + (baseY + 18) + ")",
       class: "ebc-label"
     });
-    rotated.textContent = truncate(d.label, 18);
+    rotated.textContent = truncate(d.labelParts ? d.labelParts[d.labelParts.length - 1] : d.label, 18);
     svg.appendChild(rotated);
     return;
   }
 
-  var parent = svgEl("text", {
-    x: cx,
-    y: baseY + 18,
-    "text-anchor": "middle",
-    class: "ebc-label-parent"
-  });
-  parent.textContent = truncate(d.labelParts.slice(0, -1).join(" / "), Math.max(8, Math.floor(barWidth / 4)));
-  svg.appendChild(parent);
+  var levels = maxDimensionLevels(rows);
+  for (var level = 0; level < levels; level++) {
+    var isLeaf = level === d.labelParts.length - 1;
+    if (!isLeaf && !isHierarchyGroupStart(rows, index, level)) continue;
 
-  var child = svgEl("text", {
-    x: cx,
-    y: baseY + 34,
-    "text-anchor": "middle",
-    class: "ebc-label-child"
-  });
-  child.textContent = truncate(d.labelParts[d.labelParts.length - 1], Math.max(8, Math.floor(barWidth / 4)));
-  svg.appendChild(child);
+    var span = verticalGroupSpan(rows, index, level);
+    var labelX = x + (span.end - index) * (barWidth + barGap) / 2 + barWidth / 2;
+    var label = svgEl("text", {
+      x: labelX,
+      y: baseY + 16 + (levels - 1 - level) * 18,
+      "text-anchor": "middle",
+      class: isLeaf ? "ebc-label-child" : "ebc-label-parent"
+    });
+    label.textContent = truncate(d.labelParts[level] || "", Math.max(8, Math.floor((span.width || barWidth) / 7)));
+    svg.appendChild(label);
+
+    if (level === 0 && index > 0 && isHierarchyGroupStart(rows, index, level)) {
+      var dividerX = x - barGap / 2;
+      svg.appendChild(svgEl("line", {
+        x1: dividerX,
+        x2: dividerX,
+        y1: margin.top,
+        y2: baseY + levels * 18,
+        class: "ebc-group-divider"
+      }));
+    }
+  }
 }
 
 function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
   if (!rows.some(function(row) { return row.labelParts && row.labelParts.length > 1; })) return;
 
   var dimensions = config._dimensionFields || [];
-  var fields = dimensions.length > 1
-    ? [fieldLabel(dimensions[0]), fieldLabel(dimensions[dimensions.length - 1])]
-    : ["Dimension", "Category"];
-  var layout = horizontalLabelLayout(margin);
+  var levels = maxDimensionLevels(rows);
+  var layout = horizontalLabelLayout(margin, levels);
   var headerY = margin.top - 14;
 
-  var parent = svgEl("text", { x: layout.parentX, y: headerY, class: "ebc-header" });
-  parent.textContent = fields[0];
-  svg.appendChild(parent);
-
-  var child = svgEl("text", { x: layout.childX, y: headerY, class: "ebc-header" });
-  child.textContent = fields[1];
-  svg.appendChild(child);
+  for (var level = 0; level < levels; level++) {
+    var header = svgEl("text", { x: layout.columnX(level), y: headerY, class: "ebc-header" });
+    header.textContent = dimensions[level] ? fieldLabel(dimensions[level]) : "Dimension " + (level + 1);
+    svg.appendChild(header);
+  }
 
   svg.appendChild(svgEl("line", {
     x1: 0,
@@ -1231,13 +1271,15 @@ function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
     y2: margin.top - 4,
     class: "ebc-header-rule"
   }));
-  svg.appendChild(svgEl("line", {
-    x1: layout.dividerX,
-    x2: layout.dividerX,
-    y1: 0,
-    y2: margin.top - 4,
-    class: "ebc-header-rule"
-  }));
+  layout.dividers.forEach(function(x) {
+    svg.appendChild(svgEl("line", {
+      x1: x,
+      x2: x,
+      y1: 0,
+      y2: margin.top - 4,
+      class: "ebc-header-rule"
+    }));
+  });
   svg.appendChild(svgEl("line", {
     x1: margin.left,
     x2: margin.left,
@@ -1248,7 +1290,8 @@ function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
 }
 
 function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, innerWidth) {
-  var layout = horizontalLabelLayout(margin);
+  var levels = maxDimensionLevels(rows);
+  var layout = horizontalLabelLayout(margin, levels);
   if (!d.labelParts || d.labelParts.length < 2) {
     var single = svgEl("text", {
       x: margin.left - 12,
@@ -1261,22 +1304,20 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
     return;
   }
 
-  var parent = parentKey(d);
-  var previousParent = index > 0 ? parentKey(rows[index - 1]) : null;
-  var parentStart = parent !== previousParent;
-  if (parentStart) {
-    var end = index;
-    while (end + 1 < rows.length && parentKey(rows[end + 1]) === parent) end++;
-    var groupHeight = (end - index) * d._rowStep + barHeight;
-    var parentText = svgEl("text", {
-      x: layout.parentX,
-      y: y + labelBaseline(barHeight),
-      class: "ebc-group-label"
-    });
-    parentText.textContent = truncate(parent, layout.parentChars);
-    svg.appendChild(parentText);
+  for (var level = 0; level < levels; level++) {
+    var isLeaf = level === d.labelParts.length - 1;
+    if (!isLeaf && !isHierarchyGroupStart(rows, index, level)) continue;
 
-    if (index > 0) {
+    var text = svgEl("text", {
+      x: layout.columnX(level),
+      y: y + labelBaseline(barHeight),
+      "text-anchor": "start",
+      class: isLeaf ? "ebc-label" : "ebc-group-label"
+    });
+    text.textContent = truncate(d.labelParts[level] || "", layout.columnChars);
+    svg.appendChild(text);
+
+    if (level === 0 && index > 0 && isHierarchyGroupStart(rows, index, level)) {
       svg.appendChild(svgEl("line", {
         x1: 0,
         x2: margin.left + innerWidth,
@@ -1285,35 +1326,48 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
         class: "ebc-group-divider"
       }));
     }
+  }
+  layout.dividers.forEach(function(x) {
     svg.appendChild(svgEl("line", {
-      x1: layout.dividerX,
-      x2: layout.dividerX,
+      x1: x,
+      x2: x,
       y1: y - 4,
-      y2: y + groupHeight + 4,
+      y2: y + barHeight + 4,
       class: "ebc-group-divider"
     }));
-  }
-
-  var child = svgEl("text", {
-    x: layout.childX,
-    y: y + labelBaseline(barHeight),
-    "text-anchor": "start",
-    class: "ebc-label"
   });
-  child.textContent = truncate(childLabel(d), layout.childChars);
-  svg.appendChild(child);
 }
 
-function horizontalLabelLayout(margin) {
-  var parentWidth = Math.max(82, Math.min(140, Math.floor(margin.left * 0.42)));
-  var dividerX = parentWidth + 8;
-  var childX = dividerX + 14;
+function horizontalLabelLayout(margin, levels) {
+  var columns = Math.max(1, levels || Math.floor((margin.left - 16) / 108));
+  var usable = margin.left - 28;
+  var columnWidth = usable / columns;
+  var dividers = [];
+  for (var i = 1; i < columns; i++) dividers.push(14 + i * columnWidth - 7);
   return {
-    parentX: 14,
-    dividerX: dividerX,
-    childX: childX,
-    parentChars: Math.max(8, Math.floor((dividerX - 22) / 7)),
-    childChars: Math.max(10, Math.floor((margin.left - childX - 12) / 7))
+    dividers: dividers,
+    columnChars: Math.max(8, Math.floor((columnWidth - 16) / 7)),
+    columnX: function(level) {
+      return 14 + level * columnWidth;
+    }
+  };
+}
+
+function isHierarchyGroupStart(rows, index, level) {
+  if (index === 0) return true;
+  return hierarchyKey(rows[index], level) !== hierarchyKey(rows[index - 1], level);
+}
+
+function verticalGroupSpan(rows, index, level) {
+  var key = hierarchyKey(rows[index], level);
+  var start = index;
+  var end = index;
+  while (start > 0 && hierarchyKey(rows[start - 1], level) === key) start--;
+  while (end + 1 < rows.length && hierarchyKey(rows[end + 1], level) === key) end++;
+  return {
+    start: start,
+    end: end,
+    width: Math.max(1, end - start + 1) * 28
   };
 }
 

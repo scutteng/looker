@@ -20,8 +20,9 @@ This experiment tests a custom Looker visualization where:
 - A compact gradient legend can be shown for the color-bound measure.
 - Configuration options are grouped into Data, Style, and Axis sections when supported by the Looker visualization editor.
 - Multiple queried dimensions are rendered as grouped hierarchical category labels where chart space allows.
-- Horizontal bars group child rows under the same parent dimension and render the parent as a merged Tableau-style row header.
-- The grouped horizontal axis uses separate parent and child label columns instead of concatenating labels with a slash.
+- Horizontal bars render one axis column per queried dimension, ordered left to right by the query field order.
+- Vertical columns render one bottom-axis row per queried dimension, ordered bottom to top by the query field order.
+- Hierarchical axis sorting keeps parent dimension groups together, then sorts child groups by the selected axis sort measure or label.
 - Pivoted measures fall back to the row total when present, or sum the visible pivot cells when no row total exists.
 - The SVG resizes with the Looker tile canvas through a `ResizeObserver`.
 - Flat horizontal tiles compress row height and margins so bars do not overflow into the x-axis area.
@@ -57,6 +58,7 @@ Suggested settings:
 
 - `Orientation`: `Vertical Columns` or `Horizontal Bars`
 - `Canvas Size`: auto fit, fixed height, fixed width, or fixed width plus height
+- `Axis Sort By`: defaults to the bar measure and preserves dimension hierarchy order
 - `Bar Length / Height Measure`: `Sales`
 - `Bar Color Mode`: `Bind to Measure`
 - `Color Measure`: `Profit`
@@ -73,7 +75,7 @@ Suggested settings:
 - `Axis Scale`: linear or logarithmic
 - `Show Gradient Legend`: optional
 
-For multi-level labels, add two dimensions such as `Category` and `Subcategory`; horizontal bars will group rows by the parent dimension and show the child dimension as the row label. Vertical columns will stack the parent and child labels on the bottom axis when there is enough bar width.
+For multi-level labels, add dimensions such as `Category`, `Segment`, and `Subcategory`. Horizontal bars will render those dimensions as separate left-side columns. Vertical columns will render them as stacked bottom-axis rows, with the first dimension in the lowest row.
 
 ## Why This Needs a Custom Visualization
 
