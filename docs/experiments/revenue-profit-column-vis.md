@@ -12,6 +12,10 @@ This experiment tests a custom Looker visualization where:
 - The chart can render as vertical columns or horizontal bars.
 - Bars can optionally have borders.
 - Value labels can be displayed inside or outside bars, using either the length/height measure or the color measure.
+- Query results can be sorted by dimension, bar measure, color measure, or left in Looker's query order.
+- Grid lines and axis titles can be toggled.
+- A compact gradient legend can be shown for the color-bound measure.
+- Configuration options are grouped into General, Measures, Color, Style, Labels, and Axes sections when supported by the Looker visualization editor.
 
 ## Suggested Explore Query
 
@@ -49,6 +53,10 @@ Suggested settings:
 - `Show Bar Border`: optional
 - `Show Value Labels`: optional
 - `Value Label Position`: outside, inside, or auto
+- `Sort By`: optional
+- `Show Grid Lines`: optional
+- `Show Axis Title`: optional
+- `Show Gradient Legend`: optional
 
 ## Why This Needs a Custom Visualization
 

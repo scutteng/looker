@@ -5,16 +5,19 @@ looker.plugins.visualizations.add({
     title: {
       type: "string",
       label: "Title",
+      section: "General",
       default: "Enhanced Bar Chart"
     },
     max_bars: {
       type: "number",
       label: "Max Bars",
+      section: "General",
       default: 30
     },
     orientation: {
       type: "string",
       label: "Orientation",
+      section: "General",
       display: "select",
       values: [
         { "Vertical Columns": "vertical" },
@@ -22,9 +25,34 @@ looker.plugins.visualizations.add({
       ],
       default: "vertical"
     },
+    sort_by: {
+      type: "string",
+      label: "Sort By",
+      section: "General",
+      display: "select",
+      values: [
+        { "Query Order": "query" },
+        { "Dimension": "dimension" },
+        { "Bar Measure": "height" },
+        { "Color Measure": "color" }
+      ],
+      default: "query"
+    },
+    sort_direction: {
+      type: "string",
+      label: "Sort Direction",
+      section: "General",
+      display: "select",
+      values: [
+        { "Descending": "desc" },
+        { "Ascending": "asc" }
+      ],
+      default: "desc"
+    },
     height_measure: {
       type: "string",
       label: "Bar Length / Height Measure",
+      section: "Measures",
       display: "select",
       values: [
         { "First Measure": "0" }
@@ -34,6 +62,7 @@ looker.plugins.visualizations.add({
     color_mode: {
       type: "string",
       label: "Bar Color Mode",
+      section: "Color",
       display: "select",
       values: [
         { "Single Color": "single" },
@@ -44,6 +73,7 @@ looker.plugins.visualizations.add({
     color_measure: {
       type: "string",
       label: "Color Measure",
+      section: "Color",
       display: "select",
       values: [
         { "First Measure": "0" },
@@ -56,73 +86,80 @@ looker.plugins.visualizations.add({
     single_color: {
       type: "string",
       label: "Single Color",
+      section: "Color",
       display: "color",
       default: "#2F80ED"
     },
     positive_light: {
       type: "string",
       label: "Positive Light Color",
+      section: "Color",
       display: "color",
       default: "#A7D8FF"
     },
     positive_dark: {
       type: "string",
       label: "Positive Dark Color",
+      section: "Color",
       display: "color",
       default: "#0B5CAD"
     },
     negative_light: {
       type: "string",
       label: "Negative Light Color",
+      section: "Color",
       display: "color",
       default: "#FFD5A1"
     },
     negative_dark: {
       type: "string",
       label: "Negative Dark Color",
+      section: "Color",
       display: "color",
       default: "#C65F00"
     },
     zero_color: {
       type: "string",
       label: "Zero Color",
+      section: "Color",
       display: "color",
       default: "#CBD5E1"
     },
+    show_gradient_legend: {
+      type: "boolean",
+      label: "Show Gradient Legend",
+      section: "Color",
+      default: true
+    },
     show_border: {
-      type: "string",
+      type: "boolean",
       label: "Show Bar Border",
-      display: "select",
-      values: [
-        { "No": "no" },
-        { "Yes": "yes" }
-      ],
-      default: "no"
+      section: "Style",
+      default: false
     },
     border_color: {
       type: "string",
       label: "Border Color",
+      section: "Style",
       display: "color",
       default: "#1F2937"
     },
     border_width: {
       type: "number",
       label: "Border Width",
+      section: "Style",
       default: 1
     },
     show_value_labels: {
-      type: "string",
+      type: "boolean",
       label: "Show Value Labels",
-      display: "select",
-      values: [
-        { "No": "no" },
-        { "Yes": "yes" }
-      ],
-      default: "no"
+      section: "Labels",
+      default: false
     },
     value_label_measure: {
       type: "string",
       label: "Value Label Measure",
+      section: "Labels",
       display: "select",
       values: [
         { "Bar Length / Height Measure": "height" },
@@ -133,6 +170,7 @@ looker.plugins.visualizations.add({
     value_label_position: {
       type: "string",
       label: "Value Label Position",
+      section: "Labels",
       display: "select",
       values: [
         { "Outside Bar": "outside" },
@@ -144,6 +182,7 @@ looker.plugins.visualizations.add({
     value_label_format: {
       type: "string",
       label: "Value Label Format",
+      section: "Labels",
       display: "select",
       values: [
         { "Compact": "compact" },
@@ -154,8 +193,27 @@ looker.plugins.visualizations.add({
     value_label_color: {
       type: "string",
       label: "Value Label Color",
+      section: "Labels",
       display: "color",
       default: "#1F2937"
+    },
+    show_grid: {
+      type: "boolean",
+      label: "Show Grid Lines",
+      section: "Axes",
+      default: true
+    },
+    show_axis_title: {
+      type: "boolean",
+      label: "Show Axis Title",
+      section: "Axes",
+      default: true
+    },
+    axis_title: {
+      type: "string",
+      label: "Axis Title",
+      section: "Axes",
+      default: ""
     }
   },
 
@@ -174,6 +232,7 @@ looker.plugins.visualizations.add({
       ".ebc-label{fill:#334155;font-size:11px;}",
       ".ebc-value-label{font-size:11px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}",
       ".ebc-legend{font-size:11px;fill:#64748b;}",
+      ".ebc-axis-title{fill:#475569;font-size:12px;font-weight:600;}",
       "</style>",
       "<div class='ebc-root'>",
       "<div class='ebc-title'></div>",
@@ -226,6 +285,7 @@ looker.plugins.visualizations.add({
         colorValue: colorValue
       };
     });
+    sortRows(rows, config);
 
     if (!rows.length) {
       this.addError({
@@ -257,8 +317,8 @@ looker.plugins.visualizations.add({
     var width = Math.max(640, wrap.clientWidth || element.clientWidth || 900);
     var height = Math.max(260, wrap.clientHeight || element.clientHeight - 64 || 420);
     var margin = orientation === "horizontal"
-      ? { top: 30, right: 112, bottom: 42, left: 190 }
-      : { top: 24, right: 92, bottom: 94, left: 72 };
+      ? { top: 30, right: 126, bottom: truthy(config.show_axis_title, true) ? 58 : 42, left: 190 }
+      : { top: 24, right: 104, bottom: 94, left: truthy(config.show_axis_title, true) ? 88 : 72 };
     var innerWidth = width - margin.left - margin.right;
     var innerHeight = height - margin.top - margin.bottom;
 
@@ -311,16 +371,19 @@ function buildOptions(measures, config, colorStats) {
     title: {
       type: "string",
       label: "Title",
+      section: "General",
       default: "Enhanced Bar Chart"
     },
     max_bars: {
       type: "number",
       label: "Max Bars",
+      section: "General",
       default: 30
     },
     orientation: {
       type: "string",
       label: "Orientation",
+      section: "General",
       display: "select",
       values: [
         { "Vertical Columns": "vertical" },
@@ -328,9 +391,34 @@ function buildOptions(measures, config, colorStats) {
       ],
       default: "vertical"
     },
+    sort_by: {
+      type: "string",
+      label: "Sort By",
+      section: "General",
+      display: "select",
+      values: [
+        { "Query Order": "query" },
+        { "Dimension": "dimension" },
+        { "Bar Measure": "height" },
+        { "Color Measure": "color" }
+      ],
+      default: "query"
+    },
+    sort_direction: {
+      type: "string",
+      label: "Sort Direction",
+      section: "General",
+      display: "select",
+      values: [
+        { "Descending": "desc" },
+        { "Ascending": "asc" }
+      ],
+      default: "desc"
+    },
     height_measure: {
       type: "string",
       label: "Bar Length / Height Measure",
+      section: "Measures",
       display: "select",
       values: measureValues,
       default: "0"
@@ -338,6 +426,7 @@ function buildOptions(measures, config, colorStats) {
     color_mode: {
       type: "string",
       label: "Bar Color Mode",
+      section: "Color",
       display: "select",
       values: [
         { "Single Color": "single" },
@@ -351,16 +440,18 @@ function buildOptions(measures, config, colorStats) {
     options.single_color = {
       type: "string",
       label: "Single Color",
+      section: "Color",
       display: "color",
       default: "#2F80ED"
     };
-    addStyleOptions(options);
+    addStyleOptions(options, config);
     return options;
   }
 
   options.color_measure = {
     type: "string",
     label: "Color Measure",
+    section: "Color",
     display: "select",
     values: measureValues,
     default: measures.length > 1 ? "1" : "0"
@@ -370,12 +461,14 @@ function buildOptions(measures, config, colorStats) {
     options.positive_light = {
       type: "string",
       label: "Positive Light Color",
+      section: "Color",
       display: "color",
       default: "#A7D8FF"
     };
     options.positive_dark = {
       type: "string",
       label: "Positive Dark Color",
+      section: "Color",
       display: "color",
       default: "#0B5CAD"
     };
@@ -385,12 +478,14 @@ function buildOptions(measures, config, colorStats) {
     options.negative_light = {
       type: "string",
       label: "Negative Light Color",
+      section: "Color",
       display: "color",
       default: "#FFD5A1"
     };
     options.negative_dark = {
       type: "string",
       label: "Negative Dark Color",
+      section: "Color",
       display: "color",
       default: "#C65F00"
     };
@@ -400,83 +495,116 @@ function buildOptions(measures, config, colorStats) {
     options.zero_color = {
       type: "string",
       label: "Zero Color",
+      section: "Color",
       display: "color",
       default: "#CBD5E1"
     };
   }
+  options.show_gradient_legend = {
+    type: "boolean",
+    label: "Show Gradient Legend",
+    section: "Color",
+    default: true
+  };
 
-  addStyleOptions(options);
+  addStyleOptions(options, config);
   return options;
 }
 
-function addStyleOptions(options) {
+function addStyleOptions(options, config) {
+  var borderVisible = truthy(config.show_border, false);
+  var labelsVisible = truthy(config.show_value_labels, false);
+  var axisTitleVisible = truthy(config.show_axis_title, true);
   options.show_border = {
-    type: "string",
+    type: "boolean",
     label: "Show Bar Border",
-    display: "select",
-    values: [
-      { "No": "no" },
-      { "Yes": "yes" }
-    ],
-    default: "no"
+    section: "Style",
+    default: false
   };
   options.border_color = {
     type: "string",
     label: "Border Color",
+    section: "Style",
     display: "color",
-    default: "#1F2937"
+    default: "#1F2937",
+    hidden: !borderVisible
   };
   options.border_width = {
     type: "number",
     label: "Border Width",
-    default: 1
+    section: "Style",
+    default: 1,
+    hidden: !borderVisible
   };
   options.show_value_labels = {
-    type: "string",
+    type: "boolean",
     label: "Show Value Labels",
-    display: "select",
-    values: [
-      { "No": "no" },
-      { "Yes": "yes" }
-    ],
-    default: "no"
+    section: "Labels",
+    default: false
   };
   options.value_label_measure = {
     type: "string",
     label: "Value Label Measure",
+    section: "Labels",
     display: "select",
     values: [
       { "Bar Length / Height Measure": "height" },
       { "Color Measure": "color" }
     ],
-    default: "height"
+    default: "height",
+    hidden: !labelsVisible
   };
   options.value_label_position = {
     type: "string",
     label: "Value Label Position",
+    section: "Labels",
     display: "select",
     values: [
       { "Outside Bar": "outside" },
       { "Inside Bar": "inside" },
       { "Auto": "auto" }
     ],
-    default: "outside"
+    default: "outside",
+    hidden: !labelsVisible
   };
   options.value_label_format = {
     type: "string",
     label: "Value Label Format",
+    section: "Labels",
     display: "select",
     values: [
       { "Compact": "compact" },
       { "Full": "full" }
     ],
-    default: "compact"
+    default: "compact",
+    hidden: !labelsVisible
   };
   options.value_label_color = {
     type: "string",
     label: "Value Label Color",
+    section: "Labels",
     display: "color",
-    default: "#1F2937"
+    default: "#1F2937",
+    hidden: !labelsVisible
+  };
+  options.show_grid = {
+    type: "boolean",
+    label: "Show Grid Lines",
+    section: "Axes",
+    default: true
+  };
+  options.show_axis_title = {
+    type: "boolean",
+    label: "Show Axis Title",
+    section: "Axes",
+    default: true
+  };
+  options.axis_title = {
+    type: "string",
+    label: "Axis Title",
+    section: "Axes",
+    default: "",
+    hidden: !axisTitleVisible
   };
 }
 
@@ -486,6 +614,34 @@ function measureOptionValues(measures) {
     option[(index + 1) + ". " + fieldLabel(measure)] = String(index);
     return option;
   });
+}
+
+function sortRows(rows, config) {
+  var sortBy = config.sort_by || "query";
+  if (sortBy === "query") return;
+
+  var direction = config.sort_direction === "asc" ? 1 : -1;
+  rows.sort(function(a, b) {
+    var av = sortValue(a, sortBy);
+    var bv = sortValue(b, sortBy);
+    if (typeof av === "string" || typeof bv === "string") {
+      return String(av).localeCompare(String(bv)) * direction;
+    }
+    return (av - bv) * direction;
+  });
+}
+
+function sortValue(row, sortBy) {
+  if (sortBy === "dimension") return row.label || "";
+  if (sortBy === "color") return row.colorValue == null ? row.heightValue : row.colorValue;
+  return row.heightValue;
+}
+
+function truthy(value, defaultValue) {
+  if (value === undefined || value === null) return defaultValue;
+  if (value === true || value === "true" || value === "yes") return true;
+  if (value === false || value === "false" || value === "no") return false;
+  return Boolean(value);
 }
 
 function measureStats(values) {
@@ -561,7 +717,7 @@ function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, 
   var barGap = 8;
   var barWidth = Math.max(8, (innerWidth - barGap * (rows.length - 1)) / rows.length);
 
-  drawYAxis(svg, margin, innerWidth, innerHeight, maxValue);
+  drawYAxis(svg, margin, innerWidth, innerHeight, maxValue, config);
 
   rows.forEach(function(d, i) {
     var x = margin.left + i * (barWidth + barGap);
@@ -573,7 +729,7 @@ function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, maxValue, 
     attachTooltip(rect, tooltip, svgWidth, d, config._heightMeasure, colorMeasure);
     svg.appendChild(rect);
 
-    if (config.show_value_labels === "yes") {
+    if (truthy(config.show_value_labels, false)) {
       var label = verticalValueLabel(d, x, y, barWidth, barHeight, margin, innerHeight, config, colorMeasure);
       svg.appendChild(label);
     }
@@ -596,7 +752,7 @@ function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, maxValue
   var barGap = 7;
   var barHeight = Math.max(10, Math.min(34, (innerHeight - barGap * (rows.length - 1)) / rows.length));
 
-  drawXAxis(svg, margin, innerWidth, innerHeight, maxValue);
+  drawXAxis(svg, margin, innerWidth, innerHeight, maxValue, config);
 
   rows.forEach(function(d, i) {
     var y = margin.top + i * (barHeight + barGap);
@@ -617,7 +773,7 @@ function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, maxValue
     category.textContent = truncate(d.label, 24);
     svg.appendChild(category);
 
-    if (config.show_value_labels === "yes") {
+    if (truthy(config.show_value_labels, false)) {
       var label = horizontalValueLabel(d, x, y, barWidth, barHeight, config, colorMeasure);
       svg.appendChild(label);
     }
@@ -637,8 +793,8 @@ function barRect(x, y, width, height, fill, config) {
     width: Math.max(0, width),
     height: Math.max(0, height),
     fill: fill,
-    stroke: config.show_border === "yes" ? config.border_color || "#1F2937" : "none",
-    "stroke-width": config.show_border === "yes" ? Math.max(0, Number(config.border_width || 1)) : 0,
+    stroke: truthy(config.show_border, false) ? config.border_color || "#1F2937" : "none",
+    "stroke-width": truthy(config.show_border, false) ? Math.max(0, Number(config.border_width || 1)) : 0,
     class: "ebc-bar",
     rx: 2
   });
@@ -702,18 +858,20 @@ function resolvedLabelPosition(position, availableSize, minimumInsideSize) {
   return position;
 }
 
-function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue) {
+function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue, config) {
   var ticks = 5;
   for (var i = 0; i <= ticks; i++) {
     var value = maxValue * (i / ticks);
     var y = margin.top + innerHeight - (innerHeight * i / ticks);
-    svg.appendChild(svgEl("line", {
-      x1: margin.left,
-      x2: margin.left + innerWidth,
-      y1: y,
-      y2: y,
-      class: "ebc-grid"
-    }));
+    if (truthy(config.show_grid, true)) {
+      svg.appendChild(svgEl("line", {
+        x1: margin.left,
+        x2: margin.left + innerWidth,
+        y1: y,
+        y2: y,
+        class: "ebc-grid"
+      }));
+    }
     var text = svgEl("text", {
       x: margin.left - 10,
       y: y + 4,
@@ -730,20 +888,23 @@ function drawYAxis(svg, margin, innerWidth, innerHeight, maxValue) {
     y2: margin.top + innerHeight,
     stroke: "#94A3B8"
   }));
+  drawAxisTitle(svg, margin, innerWidth, innerHeight, config, "vertical");
 }
 
-function drawXAxis(svg, margin, innerWidth, innerHeight, maxValue) {
+function drawXAxis(svg, margin, innerWidth, innerHeight, maxValue, config) {
   var ticks = 5;
   for (var i = 0; i <= ticks; i++) {
     var value = maxValue * (i / ticks);
     var x = margin.left + (innerWidth * i / ticks);
-    svg.appendChild(svgEl("line", {
-      x1: x,
-      x2: x,
-      y1: margin.top,
-      y2: margin.top + innerHeight,
-      class: "ebc-grid"
-    }));
+    if (truthy(config.show_grid, true)) {
+      svg.appendChild(svgEl("line", {
+        x1: x,
+        x2: x,
+        y1: margin.top,
+        y2: margin.top + innerHeight,
+        class: "ebc-grid"
+      }));
+    }
     var text = svgEl("text", {
       x: x,
       y: margin.top + innerHeight + 20,
@@ -760,6 +921,35 @@ function drawXAxis(svg, margin, innerWidth, innerHeight, maxValue) {
     y2: margin.top + innerHeight,
     stroke: "#94A3B8"
   }));
+  drawAxisTitle(svg, margin, innerWidth, innerHeight, config, "horizontal");
+}
+
+function drawAxisTitle(svg, margin, innerWidth, innerHeight, config, orientation) {
+  if (!truthy(config.show_axis_title, true)) return;
+  var title = config.axis_title || fieldLabel(config._heightMeasure);
+  if (!title) return;
+
+  if (orientation === "horizontal") {
+    var horizontal = svgEl("text", {
+      x: margin.left + innerWidth / 2,
+      y: margin.top + innerHeight + 46,
+      "text-anchor": "middle",
+      class: "ebc-axis-title"
+    });
+    horizontal.textContent = title;
+    svg.appendChild(horizontal);
+    return;
+  }
+
+  var vertical = svgEl("text", {
+    x: 16,
+    y: margin.top + innerHeight / 2,
+    "text-anchor": "middle",
+    transform: "rotate(-90 16 " + (margin.top + innerHeight / 2) + ")",
+    class: "ebc-axis-title"
+  });
+  vertical.textContent = title;
+  svg.appendChild(vertical);
 }
 
 function drawLegend(svg, width, margin, config, colorMeasure, stats) {
@@ -769,6 +959,11 @@ function drawLegend(svg, width, margin, config, colorMeasure, stats) {
     var single = svgEl("text", { x: width - margin.right - 100, y: y + 1, class: "ebc-legend" });
     single.textContent = "Single color";
     svg.appendChild(single);
+    return;
+  }
+
+  if (truthy(config.show_gradient_legend, true)) {
+    drawGradientLegend(svg, width, margin, config, colorMeasure, stats);
     return;
   }
 
@@ -790,6 +985,62 @@ function drawLegend(svg, width, margin, config, colorMeasure, stats) {
     text.textContent = item.label;
     svg.appendChild(text);
   });
+}
+
+function drawGradientLegend(svg, width, margin, config, colorMeasure, stats) {
+  var legendWidth = stats.crossesZero ? 210 : 150;
+  var legendHeight = 10;
+  var x = width - margin.right - legendWidth;
+  var y = 10;
+  var gradientId = "ebc-gradient-" + Math.random().toString(36).slice(2);
+  var defs = svgEl("defs", {});
+  var gradient = svgEl("linearGradient", {
+    id: gradientId,
+    x1: "0%",
+    y1: "0%",
+    x2: "100%",
+    y2: "0%"
+  });
+
+  if (stats.crossesZero) {
+    gradient.appendChild(svgEl("stop", { offset: "0%", "stop-color": config.negative_dark || "#C65F00" }));
+    gradient.appendChild(svgEl("stop", { offset: "50%", "stop-color": config.zero_color || "#CBD5E1" }));
+    gradient.appendChild(svgEl("stop", { offset: "100%", "stop-color": config.positive_dark || "#0B5CAD" }));
+  } else {
+    var light = stats.allNegative ? config.negative_light || "#FFD5A1" : config.positive_light || "#A7D8FF";
+    var dark = stats.allNegative ? config.negative_dark || "#C65F00" : config.positive_dark || "#0B5CAD";
+    gradient.appendChild(svgEl("stop", { offset: "0%", "stop-color": light }));
+    gradient.appendChild(svgEl("stop", { offset: "100%", "stop-color": dark }));
+  }
+
+  defs.appendChild(gradient);
+  svg.appendChild(defs);
+  svg.appendChild(svgEl("rect", {
+    x: x,
+    y: y,
+    width: legendWidth,
+    height: legendHeight,
+    fill: "url(#" + gradientId + ")",
+    rx: 2
+  }));
+
+  var min = svgEl("text", { x: x, y: y + 26, "text-anchor": "start", class: "ebc-legend" });
+  min.textContent = compactNumber(stats.min);
+  svg.appendChild(min);
+
+  if (stats.crossesZero) {
+    var zero = svgEl("text", { x: x + legendWidth / 2, y: y + 26, "text-anchor": "middle", class: "ebc-legend" });
+    zero.textContent = "0";
+    svg.appendChild(zero);
+  }
+
+  var max = svgEl("text", { x: x + legendWidth, y: y + 26, "text-anchor": "end", class: "ebc-legend" });
+  max.textContent = compactNumber(stats.max);
+  svg.appendChild(max);
+
+  var title = svgEl("text", { x: x, y: y - 4, "text-anchor": "start", class: "ebc-legend" });
+  title.textContent = fieldLabel(colorMeasure);
+  svg.appendChild(title);
 }
 
 function tooltipHtml(d, heightMeasure, colorMeasure) {
