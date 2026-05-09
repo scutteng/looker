@@ -23,6 +23,7 @@ This experiment tests a custom Looker visualization where:
 - Horizontal bars render one axis column per queried dimension, ordered left to right by the query field order.
 - Vertical columns render one bottom-axis row per queried dimension, ordered bottom to top by the query field order.
 - Hierarchical axis sorting keeps parent dimension groups together, then sorts child groups by the selected axis sort measure or label.
+- Multi-level axis dividers are drawn only at non-leaf dimension group boundaries and extend through the plotting area.
 - Pivoted measures fall back to the row total when present, or sum the visible pivot cells when no row total exists.
 - The SVG resizes with the Looker tile canvas through a `ResizeObserver`.
 - Flat horizontal tiles compress row height and margins so bars do not overflow into the x-axis area.

@@ -1237,16 +1237,7 @@ function drawVerticalCategoryLabel(svg, d, rows, index, x, barWidth, barGap, mar
     label.textContent = truncate(d.labelParts[level] || "", Math.max(8, Math.floor((span.width || barWidth) / 7)));
     svg.appendChild(label);
 
-    if (level === 0 && index > 0 && isHierarchyGroupStart(rows, index, level)) {
-      var dividerX = x - barGap / 2;
-      svg.appendChild(svgEl("line", {
-        x1: dividerX,
-        x2: dividerX,
-        y1: margin.top,
-        y2: baseY + levels * 18,
-        class: "ebc-group-divider"
-      }));
-    }
+    drawVerticalHierarchyDivider(svg, rows, index, level, levels, x, barGap, margin, baseY);
   }
 }
 
@@ -1317,25 +1308,8 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
     text.textContent = truncate(d.labelParts[level] || "", layout.columnChars);
     svg.appendChild(text);
 
-    if (level === 0 && index > 0 && isHierarchyGroupStart(rows, index, level)) {
-      svg.appendChild(svgEl("line", {
-        x1: 0,
-        x2: margin.left + innerWidth,
-        y1: y - 4,
-        y2: y - 4,
-        class: "ebc-group-divider"
-      }));
-    }
+    drawHorizontalHierarchyDivider(svg, rows, index, level, levels, layout, margin, innerWidth, y);
   }
-  layout.dividers.forEach(function(x) {
-    svg.appendChild(svgEl("line", {
-      x1: x,
-      x2: x,
-      y1: y - 4,
-      y2: y + barHeight + 4,
-      class: "ebc-group-divider"
-    }));
-  });
 }
 
 function horizontalLabelLayout(margin, levels) {
@@ -1369,6 +1343,41 @@ function verticalGroupSpan(rows, index, level) {
     end: end,
     width: Math.max(1, end - start + 1) * 28
   };
+}
+
+function drawHorizontalHierarchyDivider(svg, rows, index, level, levels, layout, margin, innerWidth, y) {
+  if (index === 0 || level >= levels - 1 || !isHierarchyGroupStart(rows, index, level)) return;
+  if (hasEarlierHierarchyGroupStart(rows, index, level)) return;
+
+  var x1 = layout.columnX(level);
+  svg.appendChild(svgEl("line", {
+    x1: x1,
+    x2: margin.left + innerWidth,
+    y1: y - 4,
+    y2: y - 4,
+    class: "ebc-group-divider"
+  }));
+}
+
+function drawVerticalHierarchyDivider(svg, rows, index, level, levels, x, barGap, margin, baseY) {
+  if (index === 0 || level >= levels - 1 || !isHierarchyGroupStart(rows, index, level)) return;
+  if (hasEarlierHierarchyGroupStart(rows, index, level)) return;
+
+  var dividerX = x - barGap / 2;
+  svg.appendChild(svgEl("line", {
+    x1: dividerX,
+    x2: dividerX,
+    y1: margin.top,
+    y2: baseY + levels * 18,
+    class: "ebc-group-divider"
+  }));
+}
+
+function hasEarlierHierarchyGroupStart(rows, index, level) {
+  for (var earlier = 0; earlier < level; earlier++) {
+    if (isHierarchyGroupStart(rows, index, earlier)) return true;
+  }
+  return false;
 }
 
 function labelBaseline(barHeight) {
