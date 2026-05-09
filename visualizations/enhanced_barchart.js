@@ -257,7 +257,7 @@ looker.plugins.visualizations.add({
       ".ebc-root{font-family:Inter,Roboto,Arial,sans-serif;color:#1f2937;width:100%;height:100%;box-sizing:border-box;padding:16px;background:#fff;}",
       ".ebc-title{font-size:18px;font-weight:700;margin:0 0 4px;}",
       ".ebc-subtitle{font-size:12px;color:#64748b;margin:0 0 12px;}",
-      ".ebc-chart-wrap{position:relative;width:100%;height:calc(100% - 52px);min-height:260px;}",
+      ".ebc-chart-wrap{position:relative;width:100%;height:calc(100% - 52px);min-height:0;}",
       ".ebc-tooltip{position:absolute;pointer-events:none;display:none;background:#111827;color:#fff;border-radius:4px;padding:8px 10px;font-size:12px;line-height:1.35;box-shadow:0 8px 24px rgba(15,23,42,.22);z-index:2;}",
       ".ebc-axis text{fill:#64748b;font-size:11px;}",
       ".ebc-grid{stroke:#e8edf3;stroke-width:1;}",
@@ -266,6 +266,10 @@ looker.plugins.visualizations.add({
       ".ebc-label{fill:#334155;font-size:11px;}",
       ".ebc-label-parent{fill:#94a3b8;font-size:10px;}",
       ".ebc-label-child{fill:#334155;font-size:11px;font-weight:600;}",
+      ".ebc-group-label{fill:#64748b;font-size:12px;}",
+      ".ebc-group-divider{stroke:#cbd5e1;stroke-width:1;}",
+      ".ebc-header{fill:#334155;font-size:12px;font-weight:700;}",
+      ".ebc-header-rule{stroke:#cbd5e1;stroke-width:1;}",
       ".ebc-value-label{font-size:11px;font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}",
       ".ebc-legend{font-size:11px;fill:#64748b;}",
       ".ebc-axis-title{fill:#475569;font-size:12px;font-weight:600;}",
@@ -328,6 +332,7 @@ looker.plugins.visualizations.add({
       };
     });
     sortRows(rows, config);
+    if ((config.orientation || "vertical") === "horizontal") groupRowsByParent(rows, config);
 
     if (!rows.length) {
       this.addError({
@@ -340,50 +345,20 @@ looker.plugins.visualizations.add({
 
     var colorStats = colorMeasure ? measureStats(rows.map(function(d) { return d.colorValue; })) : null;
     registerDynamicOptions(this, measures, config, colorStats);
+    config._dimensionFields = dimensions;
 
-    var root = element.querySelector(".ebc-root");
-    var title = root.querySelector(".ebc-title");
-    var subtitle = root.querySelector(".ebc-subtitle");
-    var wrap = root.querySelector(".ebc-chart-wrap");
-    var svg = wrap.querySelector("svg");
-    var tooltip = wrap.querySelector(".ebc-tooltip");
-
-    title.textContent = config.title || "Enhanced Bar Chart";
-    subtitle.textContent = colorMeasure
-      ? "Bar height = " + fieldLabel(heightMeasure) + "; color = " + fieldLabel(colorMeasure)
-      : "Bar height = " + fieldLabel(heightMeasure) + "; color = single color";
-
-    while (svg.firstChild) svg.removeChild(svg.firstChild);
-
-    var orientation = config.orientation || "vertical";
-    var width = Math.max(640, wrap.clientWidth || element.clientWidth || 900);
-    var height = Math.max(260, wrap.clientHeight || element.clientHeight - 64 || 420);
-    var margin = orientation === "horizontal"
-      ? { top: 30, right: 126, bottom: truthy(config.show_axis_title, true) ? 58 : 42, left: 190 }
-      : { top: 24, right: 104, bottom: 94, left: truthy(config.show_axis_title, true) ? 88 : 72 };
-    var innerWidth = width - margin.left - margin.right;
-    var innerHeight = height - margin.top - margin.bottom;
-
-    svg.setAttribute("width", width);
-    svg.setAttribute("height", height);
-    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
-
-    var axis = createAxis(rows.map(function(d) { return d.heightValue; }), config);
-    if (axis.error) {
-      this.addError({
-        title: axis.error.title,
-        message: axis.error.message
-      });
-      done();
-      return;
-    }
-    if (orientation === "horizontal") {
-      drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, width);
-    } else {
-      drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, width);
-    }
-
-    drawLegend(svg, width, margin, config, colorMeasure, colorStats);
+    var renderState = {
+      rows: rows,
+      config: config,
+      colorMeasure: colorMeasure,
+      colorStats: colorStats,
+      addError: this.addError.bind(this)
+    };
+    element._ebcRender = function() {
+      renderEnhancedBarChart(element, renderState);
+    };
+    ensureResizeObserver(element);
+    element._ebcRender();
     done();
   }
 });
@@ -724,6 +699,36 @@ function sortRows(rows, config) {
   });
 }
 
+function groupRowsByParent(rows, config) {
+  if (!rows.some(function(row) { return row.labelParts && row.labelParts.length > 1; })) return;
+
+  var direction = config.sort_direction === "asc" ? 1 : -1;
+  rows.sort(function(a, b) {
+    var parentCompare = parentKey(a).localeCompare(parentKey(b));
+    if (parentCompare !== 0) return parentCompare;
+
+    var sortBy = config.sort_by || "query";
+    if (sortBy === "query") return childLabel(a).localeCompare(childLabel(b));
+
+    var av = sortValue(a, sortBy);
+    var bv = sortValue(b, sortBy);
+    if (typeof av === "string" || typeof bv === "string") {
+      return String(av).localeCompare(String(bv)) * direction;
+    }
+    return (av - bv) * direction;
+  });
+}
+
+function parentKey(row) {
+  if (!row.labelParts || row.labelParts.length < 2) return "";
+  return row.labelParts.slice(0, -1).join(" / ");
+}
+
+function childLabel(row) {
+  if (!row.labelParts || !row.labelParts.length) return row.label || "";
+  return row.labelParts[row.labelParts.length - 1];
+}
+
 function sortValue(row, sortBy) {
   if (sortBy === "dimension") return row.label || "";
   if (sortBy === "color") return row.colorValue == null ? row.heightValue : row.colorValue;
@@ -899,6 +904,75 @@ function rgbToHex(r, g, b) {
   }).join("");
 }
 
+function ensureResizeObserver(element) {
+  if (element._ebcResizeObserver || typeof ResizeObserver === "undefined") return;
+
+  var timer = null;
+  element._ebcResizeObserver = new ResizeObserver(function() {
+    if (!element._ebcRender) return;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(function() {
+      element._ebcRender();
+    }, 80);
+  });
+  element._ebcResizeObserver.observe(element);
+}
+
+function renderEnhancedBarChart(element, state) {
+  var config = state.config;
+  var rows = state.rows;
+  var colorMeasure = state.colorMeasure;
+  var colorStats = state.colorStats;
+  var root = element.querySelector(".ebc-root");
+  if (!root) return;
+
+  var title = root.querySelector(".ebc-title");
+  var subtitle = root.querySelector(".ebc-subtitle");
+  var wrap = root.querySelector(".ebc-chart-wrap");
+  var svg = wrap.querySelector("svg");
+  var tooltip = wrap.querySelector(".ebc-tooltip");
+
+  title.textContent = config.title || "Enhanced Bar Chart";
+  subtitle.textContent = colorMeasure
+    ? "Bar height = " + fieldLabel(config._heightMeasure) + "; color = " + fieldLabel(colorMeasure)
+    : "Bar height = " + fieldLabel(config._heightMeasure) + "; color = single color";
+
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+  var orientation = config.orientation || "vertical";
+  var width = Math.max(260, wrap.clientWidth || element.clientWidth || 900);
+  var height = Math.max(180, wrap.clientHeight || element.clientHeight - 64 || 420);
+  var hasGroupedRows = orientation === "horizontal" && rows.some(function(d) { return d.labelParts && d.labelParts.length > 1; });
+  var horizontalLeft = hasGroupedRows
+    ? Math.min(320, Math.max(190, Math.floor(width * 0.34)))
+    : Math.min(190, Math.max(112, Math.floor(width * 0.24)));
+  var margin = orientation === "horizontal"
+    ? { top: hasGroupedRows ? 46 : 30, right: Math.min(126, Math.max(54, Math.floor(width * 0.14))), bottom: truthy(config.show_axis_title, true) ? 58 : 42, left: horizontalLeft }
+    : { top: 24, right: 104, bottom: 94, left: truthy(config.show_axis_title, true) ? 88 : 72 };
+  var innerWidth = Math.max(80, width - margin.left - margin.right);
+  var innerHeight = Math.max(60, height - margin.top - margin.bottom);
+
+  svg.setAttribute("width", width);
+  svg.setAttribute("height", height);
+  svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+  svg.style.width = "100%";
+  svg.style.height = "100%";
+
+  var axis = createAxis(rows.map(function(d) { return d.heightValue; }), config);
+  if (axis.error) {
+    if (state.addError) state.addError({ title: axis.error.title, message: axis.error.message });
+    return;
+  }
+
+  if (orientation === "horizontal") {
+    drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, width);
+  } else {
+    drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, width);
+  }
+
+  drawLegend(svg, width, margin, config, colorMeasure, colorStats);
+}
+
 function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, svgWidth) {
   var barGap = 8;
   var barWidth = Math.max(8, (innerWidth - barGap * (rows.length - 1)) / rows.length);
@@ -930,6 +1004,7 @@ function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, co
   var barGap = 7;
   var barHeight = Math.max(10, Math.min(34, (innerHeight - barGap * (rows.length - 1)) / rows.length));
 
+  drawHorizontalDimensionHeaders(svg, rows, margin, config);
   drawXAxis(svg, margin, innerWidth, innerHeight, axis, config);
   var zeroX = margin.left + axis.position(axis.zero, innerWidth);
 
@@ -944,7 +1019,7 @@ function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, co
     attachTooltip(rect, tooltip, svgWidth, d, config._heightMeasure, colorMeasure);
     svg.appendChild(rect);
 
-    drawHorizontalCategoryLabel(svg, d, margin.left - 12, y, barHeight);
+    drawHorizontalCategoryLabel(svg, d, rows, i, margin, y, barHeight, innerWidth);
 
     if (truthy(config.show_value_labels, false)) {
       var label = horizontalValueLabel(d, x, y, barWidth, barHeight, config, colorMeasure, color);
@@ -990,7 +1065,43 @@ function drawVerticalCategoryLabel(svg, d, x, barWidth, margin, innerHeight) {
   svg.appendChild(child);
 }
 
-function drawHorizontalCategoryLabel(svg, d, x, y, barHeight) {
+function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
+  if (!rows.some(function(row) { return row.labelParts && row.labelParts.length > 1; })) return;
+
+  var dimensions = config._dimensionFields || [];
+  var fields = dimensions.length > 1
+    ? [fieldLabel(dimensions[0]), fieldLabel(dimensions[dimensions.length - 1])]
+    : ["Dimension", "Category"];
+  var parentX = 14;
+  var childX = Math.max(120, margin.left - 150);
+  var headerY = margin.top - 14;
+
+  var parent = svgEl("text", { x: parentX, y: headerY, class: "ebc-header" });
+  parent.textContent = fields[0];
+  svg.appendChild(parent);
+
+  var child = svgEl("text", { x: childX, y: headerY, class: "ebc-header" });
+  child.textContent = fields[1];
+  svg.appendChild(child);
+
+  svg.appendChild(svgEl("line", {
+    x1: 0,
+    x2: margin.left,
+    y1: margin.top - 4,
+    y2: margin.top - 4,
+    class: "ebc-header-rule"
+  }));
+  svg.appendChild(svgEl("line", {
+    x1: margin.left,
+    x2: margin.left,
+    y1: 0,
+    y2: margin.top - 4,
+    class: "ebc-header-rule"
+  }));
+}
+
+function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, innerWidth) {
+  var x = margin.left - 12;
   if (!d.labelParts || d.labelParts.length < 2 || barHeight < 20) {
     var single = svgEl("text", {
       x: x,
@@ -1003,22 +1114,46 @@ function drawHorizontalCategoryLabel(svg, d, x, y, barHeight) {
     return;
   }
 
-  var parent = svgEl("text", {
-    x: x,
-    y: y + barHeight / 2 - 3,
-    "text-anchor": "end",
-    class: "ebc-label-parent"
-  });
-  parent.textContent = truncate(d.labelParts.slice(0, -1).join(" / "), 26);
-  svg.appendChild(parent);
+  var parent = parentKey(d);
+  var previousParent = index > 0 ? parentKey(rows[index - 1]) : null;
+  var parentStart = parent !== previousParent;
+  if (parentStart) {
+    var end = index;
+    while (end + 1 < rows.length && parentKey(rows[end + 1]) === parent) end++;
+    var groupHeight = (end - index + 1) * barHeight + (end - index) * 7;
+    var parentText = svgEl("text", {
+      x: 14,
+      y: y + 16,
+      class: "ebc-group-label"
+    });
+    parentText.textContent = truncate(parent, 18);
+    svg.appendChild(parentText);
+
+    if (index > 0) {
+      svg.appendChild(svgEl("line", {
+        x1: 0,
+        x2: margin.left + innerWidth,
+        y1: y - 4,
+        y2: y - 4,
+        class: "ebc-group-divider"
+      }));
+    }
+    svg.appendChild(svgEl("line", {
+      x1: 0,
+      x2: 0,
+      y1: y - 4,
+      y2: y + groupHeight + 4,
+      class: "ebc-group-divider"
+    }));
+  }
 
   var child = svgEl("text", {
     x: x,
-    y: y + barHeight / 2 + 11,
+    y: y + barHeight / 2 + 4,
     "text-anchor": "end",
-    class: "ebc-label-child"
+    class: "ebc-label"
   });
-  child.textContent = truncate(d.labelParts[d.labelParts.length - 1], 26);
+  child.textContent = truncate(childLabel(d), 24);
   svg.appendChild(child);
 }
 

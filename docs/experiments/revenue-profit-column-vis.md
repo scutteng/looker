@@ -19,7 +19,9 @@ This experiment tests a custom Looker visualization where:
 - Logarithmic axes are supported for positive-only bar values.
 - A compact gradient legend can be shown for the color-bound measure.
 - Configuration options are grouped into Data, Style, and Axis sections when supported by the Looker visualization editor.
-- Multiple queried dimensions are rendered as hierarchical category labels where chart space allows.
+- Multiple queried dimensions are rendered as grouped hierarchical category labels where chart space allows.
+- Horizontal bars group child rows under the same parent dimension and render the parent as a merged Tableau-style row header.
+- The SVG resizes with the Looker tile canvas through a `ResizeObserver`.
 - Inside value labels automatically choose light or dark text based on the bar color for readability.
 
 ## Suggested Explore Query
@@ -65,7 +67,7 @@ Suggested settings:
 - `Axis Scale`: linear or logarithmic
 - `Show Gradient Legend`: optional
 
-For multi-level labels, add two dimensions such as `Category` and `Subcategory`; horizontal bars will show the parent level above the child level when there is enough row height, and vertical columns will stack the parent and child labels on the bottom axis when there is enough bar width.
+For multi-level labels, add two dimensions such as `Category` and `Subcategory`; horizontal bars will group rows by the parent dimension and show the child dimension as the row label. Vertical columns will stack the parent and child labels on the bottom axis when there is enough bar width.
 
 ## Why This Needs a Custom Visualization
 
