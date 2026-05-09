@@ -992,16 +992,22 @@ function renderEnhancedBarChart(element, state) {
 
   var orientation = config.orientation || "vertical";
   var width = Math.max(260, wrap.clientWidth || element.clientWidth || 900);
-  var height = Math.max(180, wrap.clientHeight || element.clientHeight - 64 || 420);
+  var height = Math.max(orientation === "horizontal" ? 120 : 180, wrap.clientHeight || element.clientHeight - 64 || 420);
   var hasGroupedRows = orientation === "horizontal" && rows.some(function(d) { return d.labelParts && d.labelParts.length > 1; });
+  var compactHorizontal = orientation === "horizontal" && height < 220;
   var horizontalLeft = hasGroupedRows
     ? Math.min(320, Math.max(190, Math.floor(width * 0.34)))
     : Math.min(190, Math.max(112, Math.floor(width * 0.24)));
   var margin = orientation === "horizontal"
-    ? { top: hasGroupedRows ? 46 : 30, right: Math.min(126, Math.max(54, Math.floor(width * 0.14))), bottom: truthy(config.show_axis_title, true) ? 58 : 42, left: horizontalLeft }
+    ? {
+        top: compactHorizontal ? (hasGroupedRows ? 34 : 22) : (hasGroupedRows ? 46 : 30),
+        right: Math.min(126, Math.max(54, Math.floor(width * 0.14))),
+        bottom: compactHorizontal ? (truthy(config.show_axis_title, true) ? 44 : 30) : (truthy(config.show_axis_title, true) ? 58 : 42),
+        left: horizontalLeft
+      }
     : { top: 24, right: 104, bottom: 94, left: truthy(config.show_axis_title, true) ? 88 : 72 };
   var innerWidth = Math.max(80, width - margin.left - margin.right);
-  var innerHeight = Math.max(60, height - margin.top - margin.bottom);
+  var innerHeight = Math.max(compactHorizontal ? 24 : 60, height - margin.top - margin.bottom);
 
   svg.setAttribute("width", width);
   svg.setAttribute("height", height);
@@ -1052,15 +1058,20 @@ function drawVerticalBars(svg, rows, margin, innerWidth, innerHeight, axis, conf
 }
 
 function drawHorizontalBars(svg, rows, margin, innerWidth, innerHeight, axis, config, colorMeasure, colorStats, tooltip, svgWidth) {
-  var barGap = 7;
-  var barHeight = Math.max(10, Math.min(34, (innerHeight - barGap * (rows.length - 1)) / rows.length));
+  var rowStep = rows.length ? innerHeight / rows.length : innerHeight;
+  var barGap = Math.max(1, Math.min(7, rowStep * 0.22));
+  var barHeight = Math.max(2, Math.min(34, rowStep - barGap));
 
   drawHorizontalDimensionHeaders(svg, rows, margin, config);
   drawXAxis(svg, margin, innerWidth, innerHeight, axis, config);
   var zeroX = margin.left + axis.position(axis.zero, innerWidth);
+  rows.forEach(function(d) {
+    d._rowStep = barHeight + barGap;
+  });
 
   rows.forEach(function(d, i) {
     var y = margin.top + i * (barHeight + barGap);
+    d._y = y;
     var valueX = margin.left + axis.position(d.heightValue, innerWidth);
     var x = Math.min(valueX, zeroX);
     var barWidth = Math.abs(valueX - zeroX);
@@ -1159,7 +1170,7 @@ function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
 
 function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, innerWidth) {
   var layout = horizontalLabelLayout(margin);
-  if (!d.labelParts || d.labelParts.length < 2 || barHeight < 20) {
+  if (!d.labelParts || d.labelParts.length < 2) {
     var single = svgEl("text", {
       x: margin.left - 12,
       y: y + barHeight / 2 + 4,
@@ -1177,10 +1188,10 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
   if (parentStart) {
     var end = index;
     while (end + 1 < rows.length && parentKey(rows[end + 1]) === parent) end++;
-    var groupHeight = (end - index + 1) * barHeight + (end - index) * 7;
+    var groupHeight = (end - index) * d._rowStep + barHeight;
     var parentText = svgEl("text", {
       x: layout.parentX,
-      y: y + 16,
+      y: y + labelBaseline(barHeight),
       class: "ebc-group-label"
     });
     parentText.textContent = truncate(parent, layout.parentChars);
@@ -1206,7 +1217,7 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
 
   var child = svgEl("text", {
     x: layout.childX,
-    y: y + barHeight / 2 + 4,
+    y: y + labelBaseline(barHeight),
     "text-anchor": "start",
     class: "ebc-label"
   });
@@ -1225,6 +1236,10 @@ function horizontalLabelLayout(margin) {
     parentChars: Math.max(8, Math.floor((dividerX - 22) / 7)),
     childChars: Math.max(10, Math.floor((margin.left - childX - 12) / 7))
   };
+}
+
+function labelBaseline(barHeight) {
+  return barHeight < 9 ? barHeight / 2 + 3 : barHeight / 2 + 4;
 }
 
 function barColor(d, colorMeasure, colorStats, config) {
@@ -1394,9 +1409,10 @@ function drawAxisTitle(svg, margin, innerWidth, innerHeight, config, orientation
   if (!title) return;
 
   if (orientation === "horizontal") {
+    var titleOffset = Math.max(30, Math.min(46, margin.bottom - 12));
     var horizontal = svgEl("text", {
       x: margin.left + innerWidth / 2,
-      y: margin.top + innerHeight + 46,
+      y: margin.top + innerHeight + titleOffset,
       "text-anchor": "middle",
       class: "ebc-axis-title"
     });

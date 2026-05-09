@@ -24,6 +24,7 @@ This experiment tests a custom Looker visualization where:
 - The grouped horizontal axis uses separate parent and child label columns instead of concatenating labels with a slash.
 - Pivoted measures fall back to the row total when present, or sum the visible pivot cells when no row total exists.
 - The SVG resizes with the Looker tile canvas through a `ResizeObserver`.
+- Flat horizontal tiles compress row height and margins so bars do not overflow into the x-axis area.
 - Inside value labels automatically choose light or dark text based on the bar color for readability.
 
 ## Suggested Explore Query
