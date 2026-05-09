@@ -317,7 +317,7 @@ looker.plugins.visualizations.add({
     var maxBars = Math.max(1, Number(config.max_bars || 30));
 
     var rows = data.slice(0, maxBars).map(function(row) {
-      var colorValue = colorMeasure ? Number(cellValue(row, colorMeasure.name)) || 0 : null;
+      var colorValue = colorMeasure ? measureCellValue(row, colorMeasure.name) : null;
       var labelParts = dimensions.map(function(dimension) {
         return cleanLabel(cellValue(row, dimension.name));
       }).filter(function(label) {
@@ -327,7 +327,7 @@ looker.plugins.visualizations.add({
       return {
         label: labelParts.join(" / "),
         labelParts: labelParts,
-        heightValue: Number(cellValue(row, heightMeasure.name)) || 0,
+        heightValue: measureCellValue(row, heightMeasure.name),
         colorValue: colorValue
       };
     });
@@ -367,6 +367,57 @@ function cellValue(row, fieldName) {
   var cell = row[fieldName];
   if (!cell) return null;
   return cell.value == null ? cell.rendered || cell.html || "" : cell.value;
+}
+
+function measureCellValue(row, fieldName) {
+  var cell = row[fieldName];
+  if (!cell) return 0;
+  var direct = numericFromCell(cell);
+  if (direct != null) return direct;
+
+  var rowTotal = pivotTotalValue(cell);
+  if (rowTotal != null) return rowTotal;
+
+  var sum = 0;
+  var found = false;
+  Object.keys(cell).forEach(function(key) {
+    var value = numericFromCell(cell[key]);
+    if (value != null) {
+      sum += value;
+      found = true;
+    }
+  });
+  return found ? sum : 0;
+}
+
+function pivotTotalValue(cell) {
+  var totalKeys = Object.keys(cell).filter(function(key) {
+    return key.indexOf("row_total") >= 0 || key.indexOf("total") >= 0;
+  });
+  for (var i = 0; i < totalKeys.length; i++) {
+    var value = numericFromCell(cell[totalKeys[i]]);
+    if (value != null) return value;
+  }
+  return null;
+}
+
+function numericFromCell(cell) {
+  if (cell == null) return null;
+  if (typeof cell === "number") return Number.isFinite(cell) ? cell : null;
+  if (typeof cell === "string") return parseNumeric(cell);
+  if (typeof cell !== "object") return null;
+  if (cell.value != null) return parseNumeric(cell.value);
+  if (cell.rendered != null) return parseNumeric(cell.rendered);
+  if (cell.html != null) return parseNumeric(cell.html);
+  return null;
+}
+
+function parseNumeric(value) {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  var cleaned = String(value == null ? "" : value).replace(/<[^>]*>/g, "").replace(/,/g, "").replace(/[$¥￥%]/g, "").trim();
+  if (cleaned === "") return null;
+  var number = Number(cleaned);
+  return Number.isFinite(number) ? number : null;
 }
 
 function cleanLabel(value) {
@@ -1072,15 +1123,14 @@ function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
   var fields = dimensions.length > 1
     ? [fieldLabel(dimensions[0]), fieldLabel(dimensions[dimensions.length - 1])]
     : ["Dimension", "Category"];
-  var parentX = 14;
-  var childX = Math.max(120, margin.left - 150);
+  var layout = horizontalLabelLayout(margin);
   var headerY = margin.top - 14;
 
-  var parent = svgEl("text", { x: parentX, y: headerY, class: "ebc-header" });
+  var parent = svgEl("text", { x: layout.parentX, y: headerY, class: "ebc-header" });
   parent.textContent = fields[0];
   svg.appendChild(parent);
 
-  var child = svgEl("text", { x: childX, y: headerY, class: "ebc-header" });
+  var child = svgEl("text", { x: layout.childX, y: headerY, class: "ebc-header" });
   child.textContent = fields[1];
   svg.appendChild(child);
 
@@ -1088,6 +1138,13 @@ function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
     x1: 0,
     x2: margin.left,
     y1: margin.top - 4,
+    y2: margin.top - 4,
+    class: "ebc-header-rule"
+  }));
+  svg.appendChild(svgEl("line", {
+    x1: layout.dividerX,
+    x2: layout.dividerX,
+    y1: 0,
     y2: margin.top - 4,
     class: "ebc-header-rule"
   }));
@@ -1101,10 +1158,10 @@ function drawHorizontalDimensionHeaders(svg, rows, margin, config) {
 }
 
 function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, innerWidth) {
-  var x = margin.left - 12;
+  var layout = horizontalLabelLayout(margin);
   if (!d.labelParts || d.labelParts.length < 2 || barHeight < 20) {
     var single = svgEl("text", {
-      x: x,
+      x: margin.left - 12,
       y: y + barHeight / 2 + 4,
       "text-anchor": "end",
       class: "ebc-label"
@@ -1122,11 +1179,11 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
     while (end + 1 < rows.length && parentKey(rows[end + 1]) === parent) end++;
     var groupHeight = (end - index + 1) * barHeight + (end - index) * 7;
     var parentText = svgEl("text", {
-      x: 14,
+      x: layout.parentX,
       y: y + 16,
       class: "ebc-group-label"
     });
-    parentText.textContent = truncate(parent, 18);
+    parentText.textContent = truncate(parent, layout.parentChars);
     svg.appendChild(parentText);
 
     if (index > 0) {
@@ -1139,8 +1196,8 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
       }));
     }
     svg.appendChild(svgEl("line", {
-      x1: 0,
-      x2: 0,
+      x1: layout.dividerX,
+      x2: layout.dividerX,
       y1: y - 4,
       y2: y + groupHeight + 4,
       class: "ebc-group-divider"
@@ -1148,13 +1205,26 @@ function drawHorizontalCategoryLabel(svg, d, rows, index, margin, y, barHeight, 
   }
 
   var child = svgEl("text", {
-    x: x,
+    x: layout.childX,
     y: y + barHeight / 2 + 4,
-    "text-anchor": "end",
+    "text-anchor": "start",
     class: "ebc-label"
   });
-  child.textContent = truncate(childLabel(d), 24);
+  child.textContent = truncate(childLabel(d), layout.childChars);
   svg.appendChild(child);
+}
+
+function horizontalLabelLayout(margin) {
+  var parentWidth = Math.max(82, Math.min(140, Math.floor(margin.left * 0.42)));
+  var dividerX = parentWidth + 8;
+  var childX = dividerX + 14;
+  return {
+    parentX: 14,
+    dividerX: dividerX,
+    childX: childX,
+    parentChars: Math.max(8, Math.floor((dividerX - 22) / 7)),
+    childChars: Math.max(10, Math.floor((margin.left - childX - 12) / 7))
+  };
 }
 
 function barColor(d, colorMeasure, colorStats, config) {

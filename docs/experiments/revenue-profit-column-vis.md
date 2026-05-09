@@ -21,6 +21,8 @@ This experiment tests a custom Looker visualization where:
 - Configuration options are grouped into Data, Style, and Axis sections when supported by the Looker visualization editor.
 - Multiple queried dimensions are rendered as grouped hierarchical category labels where chart space allows.
 - Horizontal bars group child rows under the same parent dimension and render the parent as a merged Tableau-style row header.
+- The grouped horizontal axis uses separate parent and child label columns instead of concatenating labels with a slash.
+- Pivoted measures fall back to the row total when present, or sum the visible pivot cells when no row total exists.
 - The SVG resizes with the Looker tile canvas through a `ResizeObserver`.
 - Inside value labels automatically choose light or dark text based on the bar color for readability.
 
