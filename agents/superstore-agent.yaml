@@ -63,39 +63,110 @@ context:
     - Use trend language for time-series answers.
     - Keep the answer business-friendly first, then add field names if useful.
 
-  golden_queries:
-    - user_question_zh: 总销售额是多少？
-      expected_behavior: Use sales and explain it is total revenue before profit and discount analysis.
-      fields:
-        - superstore_en.sales
+  looker_golden_queries:
+    - natural_language_questions:
+        - 总销售额是多少？
+        - 公司销售额是多少？
+        - What is total revenue?
+      expected_response_guidance: Use sales and explain it is total revenue before profit and discount analysis.
+      looker_query:
+        model: superstore_en
+        explore: superstore_en
+        fields:
+          - superstore_en.sales
+        limit: "500"
 
-    - user_question_zh: 哪些产品类别利润率最低？
-      expected_behavior: Group by category, use profit_margin, and optionally include sales and profit for context.
-      fields:
-        - superstore_en.category
-        - superstore_en.profit_margin
-        - superstore_en.sales
-        - superstore_en.profit
+    - natural_language_questions:
+        - 哪些产品类别需要调整？
+        - 帮我做品类分析，看看哪些品类要优化。
+        - Which product categories need action?
+      expected_response_guidance: Analyze categories with sales, profit, profit_margin, discount_to_sales_ratio, high_discount_sales, and loss_amount. Recommend actions such as protect, improve margin, reduce discount, investigate losses, or grow selectively. Do not rank only by sales.
+      looker_query:
+        model: superstore_en
+        explore: superstore_en
+        fields:
+          - superstore_en.category
+          - superstore_en.sales
+          - superstore_en.profit
+          - superstore_en.profit_margin
+          - superstore_en.discount_to_sales_ratio
+          - superstore_en.high_discount_sales
+          - superstore_en.loss_amount
+        sorts:
+          - superstore_en.sales desc
+        limit: "500"
 
-    - user_question_zh: 折扣是不是影响了利润？
-      expected_behavior: Analyze discount, discount_to_sales_ratio, high_discount_sales, profit_margin, and loss_amount together.
-      fields:
-        - superstore_en.discount
-        - superstore_en.discount_to_sales_ratio
-        - superstore_en.high_discount_sales
-        - superstore_en.profit_margin
-        - superstore_en.loss_amount
+    - natural_language_questions:
+        - 哪些子品类拖累利润？
+        - 哪些 sub-category 亏损最严重？
+        - Which subcategories are hurting profitability?
+      expected_response_guidance: Group by category and subcategory. Use profit, profit_margin, loss_amount, and discount_to_sales_ratio. Sort by loss_amount descending when diagnosing loss severity.
+      looker_query:
+        model: superstore_en
+        explore: superstore_en
+        fields:
+          - superstore_en.category
+          - superstore_en.subcategory
+          - superstore_en.sales
+          - superstore_en.profit
+          - superstore_en.profit_margin
+          - superstore_en.discount_to_sales_ratio
+          - superstore_en.loss_amount
+        sorts:
+          - superstore_en.loss_amount desc
+        limit: "20"
 
-    - user_question_zh: 最近一年销售趋势如何？
-      expected_behavior: Use order_month and sales. If the requested current year has no data, explain the latest available dataset period.
-      fields:
-        - superstore_en.order_month
-        - superstore_en.sales
+    - natural_language_questions:
+        - 折扣是不是影响了利润？
+        - 高折扣是否造成利润下滑？
+        - Is discount hurting profit?
+      expected_response_guidance: Analyze discount, discount_to_sales_ratio, high_discount_sales, profit_margin, and loss_amount together. Explain that average discount alone is not enough.
+      looker_query:
+        model: superstore_en
+        explore: superstore_en
+        fields:
+          - superstore_en.discount_tier
+          - superstore_en.sales
+          - superstore_en.profit
+          - superstore_en.profit_margin
+          - superstore_en.discount_to_sales_ratio
+          - superstore_en.high_discount_sales
+          - superstore_en.loss_amount
+        sorts:
+          - superstore_en.discount_tier
+        limit: "500"
 
-    - user_question_zh: 哪些州亏损最严重？
-      expected_behavior: Group by state, use loss_amount and profit, and sort by loss_amount descending.
-      fields:
-        - superstore_en.state
-        - superstore_en.loss_amount
-        - superstore_en.profit
+    - natural_language_questions:
+        - 最近一年销售趋势如何？
+        - 最新一年每个月销售和利润走势如何？
+        - Show sales trend for the latest available year.
+      expected_response_guidance: Use order_month, sales, profit, and profit_margin. If the requested current year has no data, explain the latest available dataset period.
+      looker_query:
+        model: superstore_en
+        explore: superstore_en
+        fields:
+          - superstore_en.order_month
+          - superstore_en.sales
+          - superstore_en.profit
+          - superstore_en.profit_margin
+        sorts:
+          - superstore_en.order_month
+        limit: "500"
 
+    - natural_language_questions:
+        - 哪些州亏损最严重？
+        - 哪些地区需要利润改善？
+        - Which states have the largest losses?
+      expected_response_guidance: Group by state. Use loss_amount and profit, sort by loss_amount descending, and mention sales context to avoid overreacting to tiny states.
+      looker_query:
+        model: superstore_en
+        explore: superstore_en
+        fields:
+          - superstore_en.state
+          - superstore_en.sales
+          - superstore_en.loss_amount
+          - superstore_en.profit
+          - superstore_en.profit_margin
+        sorts:
+          - superstore_en.loss_amount desc
+        limit: "20"
