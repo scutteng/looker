@@ -11,3 +11,9 @@ visualization: {
   label: "Enhanced Scatter Plot"
   file: "visualizations/enhanced_scatterplot.js"
 }
+
+visualization: {
+  id: "visual_grammar_chart"
+  label: "Visual Grammar Chart"
+  file: "visualizations/visual_grammar_chart.js"
+}
