@@ -130,6 +130,20 @@ looker.plugins.visualizations.add({
       display: "color",
       default: "#CBD5E1"
     },
+    point_shape: {
+      type: "string",
+      label: "Point Shape",
+      section: "Style",
+      display: "select",
+      values: [
+        { "Circle": "circle" },
+        { "Square": "square" },
+        { "Diamond": "diamond" },
+        { "Triangle": "triangle" },
+        { "Cross": "cross" }
+      ],
+      default: "circle"
+    },
     point_opacity: {
       type: "number",
       label: "Point Opacity",
@@ -177,8 +191,14 @@ looker.plugins.visualizations.add({
       label: "X Axis Range",
       section: "Axis",
       display: "select",
-      values: [{ "Automatic": "auto" }, { "Fixed": "fixed" }],
+      values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }, { "Fixed": "fixed" }],
       default: "auto"
+    },
+    x_compact_percentile: {
+      type: "number",
+      label: "X Compact Percentile",
+      section: "Axis",
+      default: 5
     },
     x_axis_min: {
       type: "number",
@@ -197,8 +217,14 @@ looker.plugins.visualizations.add({
       label: "Y Axis Range",
       section: "Axis",
       display: "select",
-      values: [{ "Automatic": "auto" }, { "Fixed": "fixed" }],
+      values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }, { "Fixed": "fixed" }],
       default: "auto"
+    },
+    y_compact_percentile: {
+      type: "number",
+      label: "Y Compact Percentile",
+      section: "Axis",
+      default: 5
     },
     y_axis_min: {
       type: "number",
@@ -356,6 +382,14 @@ function escStyleOptions(config) {
     options.zero_color = { type: "string", label: "Zero Color", section: "Style", display: "color", default: "#CBD5E1" };
   }
   options.point_opacity = { type: "number", label: "Point Opacity", section: "Style", default: 0.82 };
+  options.point_shape = {
+    type: "string",
+    label: "Point Shape",
+    section: "Style",
+    display: "select",
+    values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }, { "Triangle": "triangle" }, { "Cross": "cross" }],
+    default: "circle"
+  };
   options.min_radius = { type: "number", label: "Minimum Radius", section: "Style", default: 4 };
   options.max_radius = { type: "number", label: "Maximum Radius", section: "Style", default: 18 };
   options.show_labels = { type: "boolean", label: "Show Labels", section: "Style", default: false };
@@ -369,12 +403,18 @@ function escStyleOptions(config) {
 function escAxisOptions(config) {
   var options = {
     show_grid: { type: "boolean", label: "Show Grid Lines", section: "Axis", default: true },
-    x_axis_range_mode: { type: "string", label: "X Axis Range", section: "Axis", display: "select", values: [{ "Automatic": "auto" }, { "Fixed": "fixed" }], default: "auto" },
-    y_axis_range_mode: { type: "string", label: "Y Axis Range", section: "Axis", display: "select", values: [{ "Automatic": "auto" }, { "Fixed": "fixed" }], default: "auto" }
+    x_axis_range_mode: { type: "string", label: "X Axis Range", section: "Axis", display: "select", values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }, { "Fixed": "fixed" }], default: "auto" },
+    y_axis_range_mode: { type: "string", label: "Y Axis Range", section: "Axis", display: "select", values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }, { "Fixed": "fixed" }], default: "auto" }
   };
+  if (config.x_axis_range_mode === "compact") {
+    options.x_compact_percentile = { type: "number", label: "X Compact Percentile", section: "Axis", default: 5 };
+  }
   if (config.x_axis_range_mode === "fixed") {
     options.x_axis_min = { type: "number", label: "X Axis Minimum", section: "Axis", default: 0 };
     options.x_axis_max = { type: "number", label: "X Axis Maximum", section: "Axis", default: 0 };
+  }
+  if (config.y_axis_range_mode === "compact") {
+    options.y_compact_percentile = { type: "number", label: "Y Compact Percentile", section: "Axis", default: 5 };
   }
   if (config.y_axis_range_mode === "fixed") {
     options.y_axis_min = { type: "number", label: "Y Axis Minimum", section: "Axis", default: 0 };
@@ -405,8 +445,8 @@ function escRender(element, state) {
   escClear(svg);
   escAttr(svg, { width: width, height: height, viewBox: "0 0 " + width + " " + height });
 
-  var xDomain = escDomain(state.rows.map(function(row) { return row.x; }), config.x_axis_range_mode, config.x_axis_min, config.x_axis_max);
-  var yDomain = escDomain(state.rows.map(function(row) { return row.y; }), config.y_axis_range_mode, config.y_axis_min, config.y_axis_max);
+  var xDomain = escDomain(state.rows.map(function(row) { return row.x; }), config.x_axis_range_mode, config.x_axis_min, config.x_axis_max, config.x_compact_percentile);
+  var yDomain = escDomain(state.rows.map(function(row) { return row.y; }), config.y_axis_range_mode, config.y_axis_min, config.y_axis_max, config.y_compact_percentile);
   var xScale = function(value) { return margin.left + escNormalize(value, xDomain) * innerWidth; };
   var yScale = function(value) { return margin.top + (1 - escNormalize(value, yDomain)) * innerHeight; };
 
@@ -422,14 +462,7 @@ function escRender(element, state) {
     var cy = yScale(row.y);
     var radius = escRadius(row, state, config);
     var fill = escColor(row, state, config);
-    var point = escSvg("circle", {
-      class: "esc-point",
-      cx: cx,
-      cy: cy,
-      r: radius,
-      fill: fill,
-      opacity: escClamp(Number(config.point_opacity || 0.82), 0.1, 1)
-    });
+    var point = escPointShape(config.point_shape || "circle", cx, cy, radius, fill, escClamp(Number(config.point_opacity || 0.82), 0.1, 1));
     point.addEventListener("mousemove", function(event) {
       tooltip.innerHTML = escTooltip(row, state);
       tooltip.style.display = "block";
@@ -555,13 +588,23 @@ function escTooltip(row, state) {
   return lines.join("<br>");
 }
 
-function escDomain(values, mode, fixedMin, fixedMax) {
+function escDomain(values, mode, fixedMin, fixedMax, compactPercentile) {
   if (mode === "fixed" && Number.isFinite(Number(fixedMin)) && Number.isFinite(Number(fixedMax)) && Number(fixedMin) !== Number(fixedMax)) {
     return [Number(fixedMin), Number(fixedMax)];
   }
-  var stats = escStats(values);
+  var numeric = values.filter(Number.isFinite).sort(function(a, b) { return a - b; });
+  var stats = escStats(numeric);
   var min = stats.min;
   var max = stats.max;
+  if (mode === "compact" && numeric.length > 3) {
+    var percentile = escClamp(Number(compactPercentile || 5), 0, 40);
+    min = escQuantile(numeric, percentile / 100);
+    max = escQuantile(numeric, 1 - percentile / 100);
+    if (min === max) {
+      min = stats.min;
+      max = stats.max;
+    }
+  }
   if (min === max) {
     var bump = Math.abs(min || 1) * 0.1;
     min -= bump;
@@ -569,6 +612,47 @@ function escDomain(values, mode, fixedMin, fixedMax) {
   }
   var padding = (max - min) * 0.08;
   return [min - padding, max + padding];
+}
+
+function escPointShape(shape, cx, cy, radius, fill, opacity) {
+  var attrs = { class: "esc-point", fill: fill, opacity: opacity };
+  if (shape === "square") {
+    return escSvg("rect", Object.assign(attrs, {
+      x: cx - radius,
+      y: cy - radius,
+      width: radius * 2,
+      height: radius * 2,
+      rx: Math.min(2, radius * 0.25)
+    }));
+  }
+  if (shape === "diamond") {
+    return escSvg("path", Object.assign(attrs, {
+      d: "M " + cx + " " + (cy - radius) + " L " + (cx + radius) + " " + cy + " L " + cx + " " + (cy + radius) + " L " + (cx - radius) + " " + cy + " Z"
+    }));
+  }
+  if (shape === "triangle") {
+    var h = radius * 1.8;
+    return escSvg("path", Object.assign(attrs, {
+      d: "M " + cx + " " + (cy - h * 0.65) + " L " + (cx + radius * 1.15) + " " + (cy + h * 0.55) + " L " + (cx - radius * 1.15) + " " + (cy + h * 0.55) + " Z"
+    }));
+  }
+  if (shape === "cross") {
+    return escSvg("path", Object.assign(attrs, {
+      d: "M " + (cx - radius) + " " + (cy - radius * 0.35) +
+        " L " + (cx - radius * 0.35) + " " + (cy - radius * 0.35) +
+        " L " + (cx - radius * 0.35) + " " + (cy - radius) +
+        " L " + (cx + radius * 0.35) + " " + (cy - radius) +
+        " L " + (cx + radius * 0.35) + " " + (cy - radius * 0.35) +
+        " L " + (cx + radius) + " " + (cy - radius * 0.35) +
+        " L " + (cx + radius) + " " + (cy + radius * 0.35) +
+        " L " + (cx + radius * 0.35) + " " + (cy + radius * 0.35) +
+        " L " + (cx + radius * 0.35) + " " + (cy + radius) +
+        " L " + (cx - radius * 0.35) + " " + (cy + radius) +
+        " L " + (cx - radius * 0.35) + " " + (cy + radius * 0.35) +
+        " L " + (cx - radius) + " " + (cy + radius * 0.35) + " Z"
+    }));
+  }
+  return escSvg("circle", Object.assign(attrs, { cx: cx, cy: cy, r: radius }));
 }
 
 function escTicks(domain, count) {
@@ -604,6 +688,16 @@ function escMedian(values) {
   if (!values.length) return 0;
   var mid = Math.floor(values.length / 2);
   return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+}
+
+function escQuantile(sortedValues, q) {
+  if (!sortedValues.length) return 0;
+  if (sortedValues.length === 1) return sortedValues[0];
+  var pos = escClamp(q, 0, 1) * (sortedValues.length - 1);
+  var lower = Math.floor(pos);
+  var upper = Math.ceil(pos);
+  var weight = pos - lower;
+  return sortedValues[lower] * (1 - weight) + sortedValues[upper] * weight;
 }
 
 function escMeasureIndex(value, measures, fallback) {
