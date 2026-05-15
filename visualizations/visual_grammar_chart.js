@@ -2,34 +2,41 @@ looker.plugins.visualizations.add({
   id: "visual_grammar_chart",
   label: "Visual Grammar Chart",
   options: {
-    title: { type: "string", label: "Title", section: "Mark", default: "Visual Grammar Chart" },
+    title: { type: "string", label: "Title", section: "View", default: "Visual Grammar Chart" },
     mark_type: {
       type: "string",
       label: "Mark Type",
-      section: "Mark",
+      section: "View",
       display: "select",
-      values: [{ "Auto": "auto" }, { "Point": "point" }, { "Bar": "bar" }, { "Line": "line" }, { "Heatmap Rect": "rect" }],
+      values: [{ "Auto": "auto" }, { "Shape": "shape" }, { "Circle": "point" }, { "Bar": "bar" }, { "Line": "line" }, { "Heatmap Rect": "rect" }, { "Text": "text" }],
       default: "auto"
     },
+    x_field: { type: "string", label: "X Field", section: "View", display: "select", values: [{ "First Field": "0" }], default: "0" },
+    x_field_2: { type: "string", label: "X Field 2", section: "View", display: "select", values: [{ "None": "none" }], default: "none" },
+    x_field_3: { type: "string", label: "X Field 3", section: "View", display: "select", values: [{ "None": "none" }], default: "none" },
+    y_field: { type: "string", label: "Y Field", section: "View", display: "select", values: [{ "Second Field": "1" }], default: "1" },
+    y_field_2: { type: "string", label: "Y Field 2", section: "View", display: "select", values: [{ "None": "none" }], default: "none" },
+    y_field_3: { type: "string", label: "Y Field 3", section: "View", display: "select", values: [{ "None": "none" }], default: "none" },
+    color_field: { type: "string", label: "Color", section: "Marks", display: "select", values: [{ "None": "none" }], default: "none" },
+    single_color: { type: "string", label: "Manual Color", section: "Marks", display: "color", default: "#2563EB" },
+    size_field: { type: "string", label: "Size", section: "Marks", display: "select", values: [{ "None": "none" }], default: "none" },
+    mark_size: { type: "number", label: "Size Slider", section: "Marks", default: 1 },
+    shape_field: { type: "string", label: "Shape", section: "Marks", display: "select", values: [{ "None": "none" }], default: "none" },
     point_shape: {
       type: "string",
-      label: "Default Point Shape",
-      section: "Mark",
+      label: "Manual Shape",
+      section: "Marks",
       display: "select",
       values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }],
       default: "circle"
     },
-    x_field: { type: "string", label: "X Field", section: "Position", display: "select", values: [{ "First Field": "0" }], default: "0" },
-    y_field: { type: "string", label: "Y Field", section: "Position", display: "select", values: [{ "Second Field": "1" }], default: "1" },
-    color_field: { type: "string", label: "Color Field", section: "Color", display: "select", values: [{ "None": "none" }], default: "none" },
-    size_field: { type: "string", label: "Size Field", section: "Size", display: "select", values: [{ "None": "none" }], default: "none" },
-    shape_field: { type: "string", label: "Shape Field", section: "Shape", display: "select", values: [{ "None": "none" }], default: "none" },
-    label_field: { type: "string", label: "Label Field", section: "Label & Tooltip", display: "select", values: [{ "None": "none" }], default: "none" },
-    tooltip_field: { type: "string", label: "Extra Tooltip Field", section: "Label & Tooltip", display: "select", values: [{ "None": "none" }], default: "none" },
+    label_field: { type: "string", label: "Text / Label", section: "Marks", display: "select", values: [{ "None": "none" }], default: "none" },
+    detail_field: { type: "string", label: "Detail", section: "Marks", display: "select", values: [{ "None": "none" }], default: "none" },
+    tooltip_field: { type: "string", label: "Tooltip", section: "Marks", display: "select", values: [{ "None": "none" }], default: "none" },
     x_scale_type: {
       type: "string",
       label: "X Scale Type",
-      section: "Axis",
+      section: "Axes & Style",
       display: "select",
       values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }],
       default: "auto"
@@ -37,7 +44,7 @@ looker.plugins.visualizations.add({
     y_scale_type: {
       type: "string",
       label: "Y Scale Type",
-      section: "Axis",
+      section: "Axes & Style",
       display: "select",
       values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }],
       default: "auto"
@@ -45,20 +52,20 @@ looker.plugins.visualizations.add({
     axis_range_mode: {
       type: "string",
       label: "Continuous Axis Range",
-      section: "Axis",
+      section: "Axes & Style",
       display: "select",
       values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }],
       default: "auto"
     },
-    compact_percentile: { type: "number", label: "Compact Percentile", section: "Axis", default: 5 },
-    show_grid: { type: "boolean", label: "Show Grid", section: "Axis", default: true },
-    show_labels: { type: "boolean", label: "Show Labels", section: "Label & Tooltip", default: false },
-    show_legend: { type: "boolean", label: "Show Legend", section: "Style", default: true },
-    positive_light: { type: "string", label: "Positive Light", section: "Color", display: "color", default: "#9ECAE1" },
-    positive_dark: { type: "string", label: "Positive Dark", section: "Color", display: "color", default: "#1F77B4" },
-    negative_light: { type: "string", label: "Negative Light", section: "Color", display: "color", default: "#FDD0A2" },
-    negative_dark: { type: "string", label: "Negative Dark", section: "Color", display: "color", default: "#FF7F0E" },
-    zero_color: { type: "string", label: "Zero Color", section: "Color", display: "color", default: "#CBD5E1" }
+    compact_percentile: { type: "number", label: "Compact Percentile", section: "Axes & Style", default: 5 },
+    show_grid: { type: "boolean", label: "Show Grid", section: "Axes & Style", default: true },
+    show_labels: { type: "boolean", label: "Show Mark Labels", section: "Axes & Style", default: false },
+    show_legend: { type: "boolean", label: "Show Legend", section: "Axes & Style", default: true },
+    positive_light: { type: "string", label: "Positive Light", section: "Axes & Style", display: "color", default: "#9ECAE1" },
+    positive_dark: { type: "string", label: "Positive Dark", section: "Axes & Style", display: "color", default: "#1F77B4" },
+    negative_light: { type: "string", label: "Negative Light", section: "Axes & Style", display: "color", default: "#FDD0A2" },
+    negative_dark: { type: "string", label: "Negative Dark", section: "Axes & Style", display: "color", default: "#FF7F0E" },
+    zero_color: { type: "string", label: "Zero Color", section: "Axes & Style", display: "color", default: "#CBD5E1" }
   },
 
   create: function(element) {
@@ -96,25 +103,30 @@ looker.plugins.visualizations.add({
     }
     vgcRegisterOptions(this, fields, config);
 
-    var xField = fields[vgcFieldIndex(config.x_field, fields, 0)];
-    var yField = fields[vgcFieldIndex(config.y_field, fields, Math.min(1, fields.length - 1))];
+    var xFields = vgcFieldList(config, "x", fields, 0);
+    var yFields = vgcFieldList(config, "y", fields, Math.min(1, fields.length - 1));
+    var xField = xFields[0];
+    var yField = yFields[0];
     var colorField = vgcOptionalField(config.color_field, fields);
     var sizeField = vgcOptionalField(config.size_field, fields);
     var shapeField = vgcOptionalField(config.shape_field, fields);
     var labelField = vgcOptionalField(config.label_field, fields);
+    var detailField = vgcOptionalField(config.detail_field, fields);
     var tooltipField = vgcOptionalField(config.tooltip_field, fields);
-    var xScaleType = vgcResolveScale(config.x_scale_type, xField);
-    var yScaleType = vgcResolveScale(config.y_scale_type, yField);
+    var xScaleType = vgcResolveCompositeScale(config.x_scale_type, xFields);
+    var yScaleType = vgcResolveCompositeScale(config.y_scale_type, yFields);
     var markType = vgcResolveMark(config.mark_type, xScaleType, yScaleType, xField, yField, colorField);
+    if (markType !== "shape") shapeField = null;
 
     var rows = data.map(function(row, index) {
       return {
         index: index,
-        x: vgcReadField(row, xField),
-        y: vgcReadField(row, yField),
+        x: vgcReadComposite(row, xFields, xScaleType),
+        y: vgcReadComposite(row, yFields, yScaleType),
         color: colorField ? vgcReadField(row, colorField) : null,
         size: sizeField ? vgcReadField(row, sizeField) : null,
         shape: shapeField ? vgcReadField(row, shapeField) : null,
+        detail: detailField ? vgcReadField(row, detailField) : null,
         tooltip: tooltipField ? vgcReadField(row, tooltipField) : null,
         label: labelField ? vgcClean(vgcReadField(row, labelField).raw) : vgcDefaultLabel(row, fields, index)
       };
@@ -134,10 +146,13 @@ looker.plugins.visualizations.add({
       config: config,
       xField: xField,
       yField: yField,
+      xFields: xFields,
+      yFields: yFields,
       colorField: colorField,
       sizeField: sizeField,
       shapeField: shapeField,
       labelField: labelField,
+      detailField: detailField,
       tooltipField: tooltipField,
       xScaleType: xScaleType,
       yScaleType: yScaleType,
@@ -162,6 +177,10 @@ function vgcBuildFields(queryResponse) {
 
 function vgcRegisterOptions(vis, fields, config) {
   if (!vis || typeof vis.trigger !== "function") return;
+  config = config || {};
+  var configuredMark = config.mark_type || "auto";
+  var shapeControlsVisible = configuredMark === "shape" || configuredMark === "auto";
+  var compactAxisVisible = config.axis_range_mode === "compact";
   var values = fields.map(function(field, index) {
     var option = {};
     option[(index + 1) + ". " + vgcFieldLabel(field)] = String(index);
@@ -169,28 +188,35 @@ function vgcRegisterOptions(vis, fields, config) {
   });
   var optionalValues = [{ "None": "none" }].concat(values);
   var options = {
-    title: { type: "string", label: "Title", section: "Mark", default: "Visual Grammar Chart" },
-    mark_type: { type: "string", label: "Mark Type", section: "Mark", display: "select", values: [{ "Auto": "auto" }, { "Point": "point" }, { "Bar": "bar" }, { "Line": "line" }, { "Heatmap Rect": "rect" }], default: "auto" },
-    point_shape: { type: "string", label: "Default Point Shape", section: "Mark", display: "select", values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }], default: "circle" },
-    x_field: { type: "string", label: "X Field", section: "Position", display: "select", values: values, default: "0" },
-    y_field: { type: "string", label: "Y Field", section: "Position", display: "select", values: values, default: fields.length > 1 ? "1" : "0" },
-    color_field: { type: "string", label: "Color Field", section: "Color", display: "select", values: optionalValues, default: "none" },
-    size_field: { type: "string", label: "Size Field", section: "Size", display: "select", values: optionalValues, default: "none" },
-    shape_field: { type: "string", label: "Shape Field", section: "Shape", display: "select", values: optionalValues, default: "none" },
-    label_field: { type: "string", label: "Label Field", section: "Label & Tooltip", display: "select", values: optionalValues, default: "none" },
-    tooltip_field: { type: "string", label: "Extra Tooltip Field", section: "Label & Tooltip", display: "select", values: optionalValues, default: "none" },
-    x_scale_type: { type: "string", label: "X Scale Type", section: "Axis", display: "select", values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }], default: "auto" },
-    y_scale_type: { type: "string", label: "Y Scale Type", section: "Axis", display: "select", values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }], default: "auto" },
-    axis_range_mode: { type: "string", label: "Continuous Axis Range", section: "Axis", display: "select", values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }], default: "auto" },
-    compact_percentile: { type: "number", label: "Compact Percentile", section: "Axis", default: 5 },
-    show_grid: { type: "boolean", label: "Show Grid", section: "Axis", default: true },
-    show_labels: { type: "boolean", label: "Show Labels", section: "Label & Tooltip", default: false },
-    show_legend: { type: "boolean", label: "Show Legend", section: "Style", default: true },
-    positive_light: { type: "string", label: "Positive Light", section: "Color", display: "color", default: "#9ECAE1" },
-    positive_dark: { type: "string", label: "Positive Dark", section: "Color", display: "color", default: "#1F77B4" },
-    negative_light: { type: "string", label: "Negative Light", section: "Color", display: "color", default: "#FDD0A2" },
-    negative_dark: { type: "string", label: "Negative Dark", section: "Color", display: "color", default: "#FF7F0E" },
-    zero_color: { type: "string", label: "Zero Color", section: "Color", display: "color", default: "#CBD5E1" }
+    title: { type: "string", label: "Title", section: "View", default: "Visual Grammar Chart" },
+    mark_type: { type: "string", label: "Mark Type", section: "View", display: "select", values: [{ "Auto": "auto" }, { "Shape": "shape" }, { "Circle": "point" }, { "Bar": "bar" }, { "Line": "line" }, { "Heatmap Rect": "rect" }, { "Text": "text" }], default: "auto" },
+    x_field: { type: "string", label: "X Field", section: "View", display: "select", values: values, default: "0" },
+    x_field_2: { type: "string", label: "X Field 2", section: "View", display: "select", values: optionalValues, default: "none" },
+    x_field_3: { type: "string", label: "X Field 3", section: "View", display: "select", values: optionalValues, default: "none" },
+    y_field: { type: "string", label: "Y Field", section: "View", display: "select", values: values, default: fields.length > 1 ? "1" : "0" },
+    y_field_2: { type: "string", label: "Y Field 2", section: "View", display: "select", values: optionalValues, default: "none" },
+    y_field_3: { type: "string", label: "Y Field 3", section: "View", display: "select", values: optionalValues, default: "none" },
+    color_field: { type: "string", label: "Color", section: "Marks", display: "select", values: optionalValues, default: "none" },
+    single_color: { type: "string", label: "Manual Color", section: "Marks", display: "color", default: "#2563EB" },
+    size_field: { type: "string", label: "Size", section: "Marks", display: "select", values: optionalValues, default: "none" },
+    mark_size: { type: "number", label: "Size Slider", section: "Marks", default: 1 },
+    shape_field: { type: "string", label: "Shape", section: "Marks", display: "select", values: optionalValues, default: "none", hidden: !shapeControlsVisible },
+    point_shape: { type: "string", label: "Manual Shape", section: "Marks", display: "select", values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }], default: "circle", hidden: !shapeControlsVisible },
+    label_field: { type: "string", label: "Text / Label", section: "Marks", display: "select", values: optionalValues, default: "none" },
+    detail_field: { type: "string", label: "Detail", section: "Marks", display: "select", values: optionalValues, default: "none" },
+    tooltip_field: { type: "string", label: "Tooltip", section: "Marks", display: "select", values: optionalValues, default: "none" },
+    x_scale_type: { type: "string", label: "X Scale Type", section: "Axes & Style", display: "select", values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }], default: "auto" },
+    y_scale_type: { type: "string", label: "Y Scale Type", section: "Axes & Style", display: "select", values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }], default: "auto" },
+    axis_range_mode: { type: "string", label: "Continuous Axis Range", section: "Axes & Style", display: "select", values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }], default: "auto" },
+    compact_percentile: { type: "number", label: "Compact Percentile", section: "Axes & Style", default: 5, hidden: !compactAxisVisible },
+    show_grid: { type: "boolean", label: "Show Grid", section: "Axes & Style", default: true },
+    show_labels: { type: "boolean", label: "Show Mark Labels", section: "Axes & Style", default: false },
+    show_legend: { type: "boolean", label: "Show Legend", section: "Axes & Style", default: true },
+    positive_light: { type: "string", label: "Positive Light", section: "Axes & Style", display: "color", default: "#9ECAE1" },
+    positive_dark: { type: "string", label: "Positive Dark", section: "Axes & Style", display: "color", default: "#1F77B4" },
+    negative_light: { type: "string", label: "Negative Light", section: "Axes & Style", display: "color", default: "#FDD0A2" },
+    negative_dark: { type: "string", label: "Negative Dark", section: "Axes & Style", display: "color", default: "#FF7F0E" },
+    zero_color: { type: "string", label: "Zero Color", section: "Axes & Style", display: "color", default: "#CBD5E1" }
   };
   var signature = JSON.stringify(options);
   if (vis._vgcOptionsSignature === signature) return;
@@ -208,7 +234,7 @@ function vgcRender(element, state) {
   if (!title || !subtitle || !wrap || !svg || !tooltip) return;
 
   title.textContent = config.title || "Visual Grammar Chart";
-  subtitle.textContent = state.markType + " | X: " + vgcFieldLabel(state.xField) + " | Y: " + vgcFieldLabel(state.yField);
+  subtitle.textContent = state.markType + " | X: " + vgcFieldListLabel(state.xFields) + " | Y: " + vgcFieldListLabel(state.yFields);
 
   var width = Math.max(380, wrap.clientWidth || element.clientWidth || 760);
   var height = Math.max(300, wrap.clientHeight || element.clientHeight - 48 || 460);
@@ -222,7 +248,7 @@ function vgcRender(element, state) {
   var xScale = vgcBuildScale(state.rows.map(function(row) { return row.x; }), state.xScaleType, margin.left, margin.left + innerWidth, config);
   var yScale = vgcBuildScale(state.rows.map(function(row) { return row.y; }), state.yScaleType, margin.top + innerHeight, margin.top, config);
   var color = vgcColorScale(state.rows.map(function(row) { return row.color; }), state.colorField, config);
-  var size = vgcSizeScale(state.rows.map(function(row) { return row.size; }), state.sizeField);
+  var size = vgcSizeScale(state.rows.map(function(row) { return row.size; }), state.sizeField, config);
   var shape = vgcShapeScale(state.rows.map(function(row) { return row.shape; }), state.shapeField, config.point_shape || "circle");
   var g = vgcSvg("g", {});
   svg.appendChild(g);
@@ -231,6 +257,7 @@ function vgcRender(element, state) {
   if (state.markType === "bar") vgcDrawBars(g, state, xScale, yScale, color, tooltip, width);
   else if (state.markType === "line") vgcDrawLine(g, state, xScale, yScale, color, size, shape, tooltip, width);
   else if (state.markType === "rect") vgcDrawRects(g, state, xScale, yScale, color, tooltip, width);
+  else if (state.markType === "text") vgcDrawTextMarks(g, state, xScale, yScale, color, size, tooltip, width);
   else vgcDrawPoints(g, state, xScale, yScale, color, size, shape, tooltip, width);
 
   if (config.show_legend && (state.colorField || state.sizeField || state.shapeField)) {
@@ -257,15 +284,15 @@ function vgcDrawAxes(g, xScale, yScale, margin, innerWidth, innerHeight, state, 
   });
   g.appendChild(vgcSvg("line", { class: "vgc-axis-line", x1: margin.left, y1: margin.top + innerHeight, x2: margin.left + innerWidth, y2: margin.top + innerHeight }));
   g.appendChild(vgcSvg("line", { class: "vgc-axis-line", x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + innerHeight }));
-  g.appendChild(vgcText(vgcFieldLabel(state.xField), margin.left + innerWidth / 2, margin.top + innerHeight + 42, "vgc-axis-title", "middle"));
-  var yTitle = vgcText(vgcFieldLabel(state.yField), 18, margin.top + innerHeight / 2, "vgc-axis-title", "middle");
+  g.appendChild(vgcText(vgcFieldListLabel(state.xFields), margin.left + innerWidth / 2, margin.top + innerHeight + 42, "vgc-axis-title", "middle"));
+  var yTitle = vgcText(vgcFieldListLabel(state.yFields), 18, margin.top + innerHeight / 2, "vgc-axis-title", "middle");
   vgcAttr(yTitle, { transform: "rotate(-90 18 " + (margin.top + innerHeight / 2) + ")" });
   g.appendChild(yTitle);
 }
 
 function vgcDrawBars(g, state, xScale, yScale, color, tooltip, width) {
   var baseline = state.yScaleType === "continuous" ? yScale.pos(Math.max(0, Math.min(0, yScale.domain[1]))) : yScale.rangeStart;
-  var barWidth = Math.max(4, (xScale.band || 18) * 0.72);
+  var barWidth = Math.max(4, (xScale.band || 18) * 0.72 * vgcMarkSize(state.config));
   state.rows.forEach(function(row) {
     var x = xScale.pos(row.x.value) - barWidth / 2;
     var y = yScale.pos(row.y.value);
@@ -282,7 +309,7 @@ function vgcDrawLine(g, state, xScale, yScale, color, size, shape, tooltip, widt
   var path = rows.map(function(row, index) {
     return (index === 0 ? "M " : " L ") + xScale.pos(row.x.value) + " " + yScale.pos(row.y.value);
   }).join("");
-  g.appendChild(vgcSvg("path", { d: path, fill: "none", stroke: "#2563EB", "stroke-width": 2 }));
+  g.appendChild(vgcSvg("path", { d: path, fill: "none", stroke: "#2563EB", "stroke-width": Math.max(1, 2 * vgcMarkSize(state.config)) }));
   vgcDrawPoints(g, Object.assign({}, state, { rows: rows }), xScale, yScale, color, size, shape, tooltip, width);
 }
 
@@ -299,8 +326,8 @@ function vgcDrawPoints(g, state, xScale, yScale, color, size, shape, tooltip, wi
 }
 
 function vgcDrawRects(g, state, xScale, yScale, color, tooltip, width) {
-  var rectWidth = Math.max(4, (xScale.band || 18) * 0.92);
-  var rectHeight = Math.max(4, (yScale.band || 18) * 0.92);
+  var rectWidth = Math.max(4, (xScale.band || 18) * 0.92 * vgcMarkSize(state.config));
+  var rectHeight = Math.max(4, (yScale.band || 18) * 0.92 * vgcMarkSize(state.config));
   state.rows.forEach(function(row) {
     var x = xScale.pos(row.x.value) - rectWidth / 2;
     var y = yScale.pos(row.y.value) - rectHeight / 2;
@@ -308,6 +335,17 @@ function vgcDrawRects(g, state, xScale, yScale, color, tooltip, width) {
     vgcAttachTooltip(rect, tooltip, row, state, width);
     g.appendChild(rect);
     if (state.config.show_labels) g.appendChild(vgcText(row.label, x + rectWidth / 2, y + rectHeight / 2 + 4, "vgc-label", "middle"));
+  });
+}
+
+function vgcDrawTextMarks(g, state, xScale, yScale, color, size, tooltip, width) {
+  state.rows.forEach(function(row) {
+    var x = xScale.pos(row.x.value);
+    var y = yScale.pos(row.y.value);
+    var text = vgcText(row.label, x, y + 4, "vgc-label vgc-mark", "middle");
+    vgcAttr(text, { fill: color(row.color), "font-size": Math.max(10, 11 * vgcMarkSize(state.config)) });
+    vgcAttachTooltip(text, tooltip, row, state, width);
+    g.appendChild(text);
   });
 }
 
@@ -350,7 +388,7 @@ function vgcBuildScale(cells, scaleType, rangeStart, rangeEnd, config) {
 }
 
 function vgcColorScale(cells, field, config) {
-  var fallback = "#2563EB";
+  var fallback = config.single_color || "#2563EB";
   if (!field) {
     var noColor = function() { return fallback; };
     noColor.kind = "none";
@@ -410,9 +448,10 @@ function vgcShapeScale(cells, field, defaultShape) {
   return scale;
 }
 
-function vgcSizeScale(cells, field) {
+function vgcSizeScale(cells, field, config) {
+  var sizeMultiplier = vgcMarkSize(config);
   if (!field || vgcResolveScale("auto", field) !== "continuous") {
-    var noSize = function() { return 6; };
+    var noSize = function() { return 6 * sizeMultiplier; };
     noSize.kind = "none";
     return noSize;
   }
@@ -421,7 +460,7 @@ function vgcSizeScale(cells, field) {
   var scale = function(cell) {
     var value = cell ? Math.abs(cell.number) : 0;
     var t = stats.max === stats.min ? 0.5 : (value - stats.min) / (stats.max - stats.min);
-    return 4 + vgcClamp(t, 0, 1) * 14;
+    return (4 + vgcClamp(t, 0, 1) * 14) * sizeMultiplier;
   };
   scale.kind = "continuous";
   scale.stats = stats;
@@ -436,13 +475,37 @@ function vgcResolveScale(configured, field) {
   return "discrete";
 }
 
+function vgcResolveCompositeScale(configured, fields) {
+  if (fields.length > 1) return "discrete";
+  return vgcResolveScale(configured, fields[0]);
+}
+
 function vgcResolveMark(configured, xScaleType, yScaleType, xField, yField, colorField) {
   if (configured && configured !== "auto") return configured;
   if (xField && /date|time/.test(String(xField.type || "")) && yScaleType === "continuous") return "line";
   if (xScaleType === "discrete" && yScaleType === "discrete" && colorField) return "rect";
   if (xScaleType === "discrete" && yScaleType === "continuous") return "bar";
-  if (xScaleType === "continuous" && yScaleType === "discrete") return "point";
-  return "point";
+  if (xScaleType === "continuous" && yScaleType === "discrete") return "shape";
+  if (xScaleType === "continuous" && yScaleType === "continuous") return "shape";
+  return "text";
+}
+
+function vgcFieldList(config, axis, fields, fallback) {
+  var selected = [fields[vgcFieldIndex(config[axis + "_field"], fields, fallback)]];
+  [axis + "_field_2", axis + "_field_3"].forEach(function(key) {
+    var field = vgcOptionalField(config[key], fields);
+    if (field && selected.indexOf(field) < 0) selected.push(field);
+  });
+  return selected.filter(Boolean);
+}
+
+function vgcReadComposite(row, fields, scaleType) {
+  if (scaleType === "continuous" && fields.length === 1) return vgcReadField(row, fields[0]);
+  var parts = fields.map(function(field) {
+    return vgcClean(vgcReadField(row, field).raw);
+  }).filter(Boolean);
+  var raw = parts.join(" / ");
+  return { raw: raw, value: raw, number: vgcParseNumber(raw) };
 }
 
 function vgcReadField(row, field) {
@@ -530,12 +593,13 @@ function vgcAttachTooltip(node, tooltip, row, state, width) {
 function vgcTooltip(row, state) {
   var lines = [
     "<strong>" + vgcHtml(row.label) + "</strong>",
-    vgcHtml(vgcFieldLabel(state.xField)) + ": " + vgcHtml(vgcDisplay(row.x)),
-    vgcHtml(vgcFieldLabel(state.yField)) + ": " + vgcHtml(vgcDisplay(row.y))
+    vgcHtml(vgcFieldListLabel(state.xFields)) + ": " + vgcHtml(vgcDisplay(row.x)),
+    vgcHtml(vgcFieldListLabel(state.yFields)) + ": " + vgcHtml(vgcDisplay(row.y))
   ];
   if (state.colorField) lines.push(vgcHtml(vgcFieldLabel(state.colorField)) + ": " + vgcHtml(vgcDisplay(row.color)));
   if (state.sizeField) lines.push(vgcHtml(vgcFieldLabel(state.sizeField)) + ": " + vgcHtml(vgcDisplay(row.size)));
   if (state.shapeField) lines.push(vgcHtml(vgcFieldLabel(state.shapeField)) + ": " + vgcHtml(vgcDisplay(row.shape)));
+  if (state.detailField) lines.push(vgcHtml(vgcFieldLabel(state.detailField)) + ": " + vgcHtml(vgcDisplay(row.detail)));
   if (state.tooltipField) lines.push(vgcHtml(vgcFieldLabel(state.tooltipField)) + ": " + vgcHtml(vgcDisplay(row.tooltip)));
   return lines.join("<br>");
 }
@@ -642,6 +706,10 @@ function vgcFieldLabel(field) {
   return field.label_short || field.label || field.name;
 }
 
+function vgcFieldListLabel(fields) {
+  return fields.map(vgcFieldLabel).join(" / ");
+}
+
 function vgcDisplay(cell) {
   if (!cell) return "";
   return cell.number != null && Number.isFinite(cell.number) ? vgcFormat(cell.number) : vgcClean(cell.raw);
@@ -663,6 +731,12 @@ function vgcClean(value) {
 function vgcTruncate(value, max) {
   var text = vgcClean(value);
   return text.length > max ? text.slice(0, max - 1) + "..." : text;
+}
+
+function vgcMarkSize(config) {
+  var size = Number(config && config.mark_size);
+  if (!Number.isFinite(size)) size = 1;
+  return vgcClamp(size, 0.25, 3);
 }
 
 function vgcHtml(value) {
