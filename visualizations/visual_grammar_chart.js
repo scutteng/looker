@@ -79,6 +79,7 @@ looker.plugins.visualizations.add({
       ".vgc-axis text{fill:#64748b;font-size:11px;}",
       ".vgc-grid{stroke:#e8edf3;stroke-width:1;}",
       ".vgc-axis-line{stroke:#94a3b8;stroke-width:1;}",
+      ".vgc-axis-separator{stroke:#cbd5e1;stroke-width:1;}",
       ".vgc-mark{transition:opacity .15s ease,stroke-width .15s ease;}",
       ".vgc-mark:hover{opacity:.9;stroke:#111827;stroke-width:2;}",
       ".vgc-label{fill:#334155;font-size:11px;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round;}",
@@ -239,7 +240,9 @@ function vgcRender(element, state) {
   var width = Math.max(380, wrap.clientWidth || element.clientWidth || 760);
   var height = Math.max(300, wrap.clientHeight || element.clientHeight - 48 || 460);
   var legendHeight = config.show_legend ? 86 : 0;
-  var margin = { top: 18, right: 28, bottom: 56 + legendHeight, left: 76 };
+  var xHeaderHeight = state.xScaleType === "discrete" ? Math.max(1, state.xFields.length) * 18 + 24 : 56;
+  var yHeaderWidth = state.yScaleType === "discrete" ? Math.max(1, state.yFields.length) * 76 + 12 : 76;
+  var margin = { top: 18, right: 28, bottom: xHeaderHeight + legendHeight, left: yHeaderWidth };
   var innerWidth = Math.max(120, width - margin.left - margin.right);
   var innerHeight = Math.max(120, height - margin.top - margin.bottom);
   vgcClear(svg);
@@ -261,7 +264,7 @@ function vgcRender(element, state) {
   else vgcDrawPoints(g, state, xScale, yScale, color, size, shape, tooltip, width);
 
   if (config.show_legend && (state.colorField || state.sizeField || state.shapeField)) {
-    vgcDrawLegend(g, margin.left, margin.top + innerHeight + 68, state, color, size, shape);
+    vgcDrawLegend(g, margin.left, margin.top + innerHeight + xHeaderHeight + 12, state, color, size, shape);
   }
 }
 
@@ -276,18 +279,87 @@ function vgcDrawAxes(g, xScale, yScale, margin, innerWidth, innerHeight, state, 
       g.appendChild(vgcSvg("line", { class: "vgc-grid", x1: margin.left, y1: y, x2: margin.left + innerWidth, y2: y }));
     });
   }
-  xScale.ticks.forEach(function(tick) {
-    g.appendChild(vgcText(tick.label, xScale.pos(tick.value), margin.top + innerHeight + 20, "vgc-axis", "middle"));
-  });
-  yScale.ticks.forEach(function(tick) {
-    g.appendChild(vgcText(tick.label, margin.left - 10, yScale.pos(tick.value) + 4, "vgc-axis", "end"));
-  });
+  if (xScale.type === "discrete") vgcDrawXHeaders(g, xScale, margin, innerWidth, innerHeight, state);
+  else {
+    xScale.ticks.forEach(function(tick) {
+      g.appendChild(vgcText(tick.label, xScale.pos(tick.value), margin.top + innerHeight + 20, "vgc-axis", "middle"));
+    });
+  }
+  if (yScale.type === "discrete") vgcDrawYHeaders(g, yScale, margin, innerWidth, innerHeight, state);
+  else {
+    yScale.ticks.forEach(function(tick) {
+      g.appendChild(vgcText(tick.label, margin.left - 10, yScale.pos(tick.value) + 4, "vgc-axis", "end"));
+    });
+  }
   g.appendChild(vgcSvg("line", { class: "vgc-axis-line", x1: margin.left, y1: margin.top + innerHeight, x2: margin.left + innerWidth, y2: margin.top + innerHeight }));
   g.appendChild(vgcSvg("line", { class: "vgc-axis-line", x1: margin.left, y1: margin.top, x2: margin.left, y2: margin.top + innerHeight }));
-  g.appendChild(vgcText(vgcFieldListLabel(state.xFields), margin.left + innerWidth / 2, margin.top + innerHeight + 42, "vgc-axis-title", "middle"));
+  var xTitleY = margin.top + innerHeight + (xScale.type === "discrete" ? Math.max(1, state.xFields.length) * 18 + 20 : 42);
+  g.appendChild(vgcText(vgcFieldListLabel(state.xFields), margin.left + innerWidth / 2, xTitleY, "vgc-axis-title", "middle"));
   var yTitle = vgcText(vgcFieldListLabel(state.yFields), 18, margin.top + innerHeight / 2, "vgc-axis-title", "middle");
   vgcAttr(yTitle, { transform: "rotate(-90 18 " + (margin.top + innerHeight / 2) + ")" });
   g.appendChild(yTitle);
+}
+
+function vgcDrawXHeaders(g, xScale, margin, innerWidth, innerHeight, state) {
+  var levels = Math.max(1, state.xFields.length);
+  var baseY = margin.top + innerHeight;
+  for (var level = levels - 1; level >= 0; level--) {
+    var y = baseY + 18 * (levels - level);
+    vgcAxisGroups(xScale.ticks, level).forEach(function(group) {
+      var center = (xScale.pos(group.first.value) + xScale.pos(group.last.value)) / 2;
+      g.appendChild(vgcText(vgcTruncate(group.label, level === levels - 1 ? 14 : 18), center, y, "vgc-axis", "middle"));
+    });
+  }
+  for (var sepLevel = 0; sepLevel < levels - 1; sepLevel++) {
+    vgcAxisBoundaries(xScale, sepLevel).forEach(function(x) {
+      g.appendChild(vgcSvg("line", { class: "vgc-axis-separator", x1: x, y1: margin.top, x2: x, y2: baseY + levels * 18 + 4 }));
+    });
+  }
+}
+
+function vgcDrawYHeaders(g, yScale, margin, innerWidth, innerHeight, state) {
+  var levels = Math.max(1, state.yFields.length);
+  var colWidth = 76;
+  var leftEdge = margin.left - levels * colWidth;
+  for (var level = 0; level < levels; level++) {
+    var x = leftEdge + level * colWidth + 6;
+    vgcAxisGroups(yScale.ticks, level).forEach(function(group) {
+      var center = (yScale.pos(group.first.value) + yScale.pos(group.last.value)) / 2 + 4;
+      g.appendChild(vgcText(vgcTruncate(group.label, 12), x, center, "vgc-axis", "start"));
+    });
+  }
+  for (var sepLevel = 0; sepLevel < levels - 1; sepLevel++) {
+    vgcAxisBoundaries(yScale, sepLevel).forEach(function(y) {
+      g.appendChild(vgcSvg("line", { class: "vgc-axis-separator", x1: leftEdge, y1: y, x2: margin.left + innerWidth, y2: y }));
+    });
+  }
+}
+
+function vgcAxisGroups(ticks, level) {
+  var groups = [];
+  ticks.forEach(function(tick) {
+    var parts = tick.parts || [tick.label || tick.value];
+    var key = parts.slice(0, level + 1).join("\u001f");
+    var label = parts[level] || tick.label || tick.value;
+    var last = groups[groups.length - 1];
+    if (last && last.key === key) {
+      last.last = tick;
+    } else {
+      groups.push({ key: key, label: label, first: tick, last: tick });
+    }
+  });
+  return groups;
+}
+
+function vgcAxisBoundaries(scale, level) {
+  var boundaries = [];
+  var ticks = scale.ticks || [];
+  for (var i = 1; i < ticks.length; i++) {
+    var previous = (ticks[i - 1].parts || [ticks[i - 1].label || ticks[i - 1].value]).slice(0, level + 1).join("\u001f");
+    var current = (ticks[i].parts || [ticks[i].label || ticks[i].value]).slice(0, level + 1).join("\u001f");
+    if (previous !== current) boundaries.push((scale.pos(ticks[i - 1].value) + scale.pos(ticks[i].value)) / 2);
+  }
+  return boundaries;
 }
 
 function vgcDrawBars(g, state, xScale, yScale, color, tooltip, width) {
@@ -351,21 +423,28 @@ function vgcDrawTextMarks(g, state, xScale, yScale, color, size, tooltip, width)
 
 function vgcBuildScale(cells, scaleType, rangeStart, rangeEnd, config) {
   if (scaleType === "discrete") {
-    var values = [];
+    var items = [];
     cells.forEach(function(cell) {
       var label = vgcClean(cell.raw);
-      if (values.indexOf(label) < 0) values.push(label);
+      if (!items.some(function(item) { return item.value === label; })) {
+        items.push({ value: label, parts: cell.parts && cell.parts.length ? cell.parts : [label] });
+      }
     });
-    var step = values.length > 1 ? (rangeEnd - rangeStart) / values.length : (rangeEnd - rangeStart);
+    var step = items.length > 1 ? (rangeEnd - rangeStart) / items.length : (rangeEnd - rangeStart);
     var band = Math.abs(step);
     return {
       type: "discrete",
       band: band,
+      step: step,
       rangeStart: rangeStart,
       rangeEnd: rangeEnd,
-      ticks: values.map(function(value) { return { value: value, label: vgcTruncate(value, 18) }; }),
+      ticks: items.map(function(item) {
+        var label = item.parts.length ? item.parts[item.parts.length - 1] : item.value;
+        return { value: item.value, label: vgcTruncate(label, 18), parts: item.parts };
+      }),
       pos: function(value) {
-        var index = Math.max(0, values.indexOf(vgcClean(value)));
+        var clean = vgcClean(value);
+        var index = Math.max(0, items.findIndex(function(item) { return item.value === clean; }));
         return rangeStart + step * index + step / 2;
       }
     };
@@ -500,12 +579,16 @@ function vgcFieldList(config, axis, fields, fallback) {
 }
 
 function vgcReadComposite(row, fields, scaleType) {
-  if (scaleType === "continuous" && fields.length === 1) return vgcReadField(row, fields[0]);
+  if (scaleType === "continuous" && fields.length === 1) {
+    var continuous = vgcReadField(row, fields[0]);
+    continuous.parts = [vgcClean(continuous.raw)];
+    return continuous;
+  }
   var parts = fields.map(function(field) {
     return vgcClean(vgcReadField(row, field).raw);
   }).filter(Boolean);
   var raw = parts.join(" / ");
-  return { raw: raw, value: raw, number: vgcParseNumber(raw) };
+  return { raw: raw, value: raw, number: vgcParseNumber(raw), parts: parts };
 }
 
 function vgcReadField(row, field) {
