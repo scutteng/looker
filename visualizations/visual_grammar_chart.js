@@ -19,12 +19,13 @@ looker.plugins.visualizations.add({
       values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }],
       default: "circle"
     },
-    x_field: { type: "string", label: "X Field", section: "Channels", display: "select", values: [{ "First Field": "0" }], default: "0" },
-    y_field: { type: "string", label: "Y Field", section: "Channels", display: "select", values: [{ "Second Field": "1" }], default: "1" },
-    color_field: { type: "string", label: "Color Field", section: "Channels", display: "select", values: [{ "None": "none" }], default: "none" },
-    size_field: { type: "string", label: "Size Field", section: "Channels", display: "select", values: [{ "None": "none" }], default: "none" },
-    shape_field: { type: "string", label: "Shape Field", section: "Channels", display: "select", values: [{ "None": "none" }], default: "none" },
-    label_field: { type: "string", label: "Label Field", section: "Channels", display: "select", values: [{ "None": "none" }], default: "none" },
+    x_field: { type: "string", label: "X Field", section: "Position", display: "select", values: [{ "First Field": "0" }], default: "0" },
+    y_field: { type: "string", label: "Y Field", section: "Position", display: "select", values: [{ "Second Field": "1" }], default: "1" },
+    color_field: { type: "string", label: "Color Field", section: "Color", display: "select", values: [{ "None": "none" }], default: "none" },
+    size_field: { type: "string", label: "Size Field", section: "Size", display: "select", values: [{ "None": "none" }], default: "none" },
+    shape_field: { type: "string", label: "Shape Field", section: "Shape", display: "select", values: [{ "None": "none" }], default: "none" },
+    label_field: { type: "string", label: "Label Field", section: "Label & Tooltip", display: "select", values: [{ "None": "none" }], default: "none" },
+    tooltip_field: { type: "string", label: "Extra Tooltip Field", section: "Label & Tooltip", display: "select", values: [{ "None": "none" }], default: "none" },
     x_scale_type: {
       type: "string",
       label: "X Scale Type",
@@ -51,13 +52,13 @@ looker.plugins.visualizations.add({
     },
     compact_percentile: { type: "number", label: "Compact Percentile", section: "Axis", default: 5 },
     show_grid: { type: "boolean", label: "Show Grid", section: "Axis", default: true },
-    show_labels: { type: "boolean", label: "Show Labels", section: "Style", default: false },
+    show_labels: { type: "boolean", label: "Show Labels", section: "Label & Tooltip", default: false },
     show_legend: { type: "boolean", label: "Show Legend", section: "Style", default: true },
-    positive_light: { type: "string", label: "Positive Light", section: "Style", display: "color", default: "#9ECAE1" },
-    positive_dark: { type: "string", label: "Positive Dark", section: "Style", display: "color", default: "#1F77B4" },
-    negative_light: { type: "string", label: "Negative Light", section: "Style", display: "color", default: "#FDD0A2" },
-    negative_dark: { type: "string", label: "Negative Dark", section: "Style", display: "color", default: "#FF7F0E" },
-    zero_color: { type: "string", label: "Zero Color", section: "Style", display: "color", default: "#CBD5E1" }
+    positive_light: { type: "string", label: "Positive Light", section: "Color", display: "color", default: "#9ECAE1" },
+    positive_dark: { type: "string", label: "Positive Dark", section: "Color", display: "color", default: "#1F77B4" },
+    negative_light: { type: "string", label: "Negative Light", section: "Color", display: "color", default: "#FDD0A2" },
+    negative_dark: { type: "string", label: "Negative Dark", section: "Color", display: "color", default: "#FF7F0E" },
+    zero_color: { type: "string", label: "Zero Color", section: "Color", display: "color", default: "#CBD5E1" }
   },
 
   create: function(element) {
@@ -101,6 +102,7 @@ looker.plugins.visualizations.add({
     var sizeField = vgcOptionalField(config.size_field, fields);
     var shapeField = vgcOptionalField(config.shape_field, fields);
     var labelField = vgcOptionalField(config.label_field, fields);
+    var tooltipField = vgcOptionalField(config.tooltip_field, fields);
     var xScaleType = vgcResolveScale(config.x_scale_type, xField);
     var yScaleType = vgcResolveScale(config.y_scale_type, yField);
     var markType = vgcResolveMark(config.mark_type, xScaleType, yScaleType, xField, yField, colorField);
@@ -113,6 +115,7 @@ looker.plugins.visualizations.add({
         color: colorField ? vgcReadField(row, colorField) : null,
         size: sizeField ? vgcReadField(row, sizeField) : null,
         shape: shapeField ? vgcReadField(row, shapeField) : null,
+        tooltip: tooltipField ? vgcReadField(row, tooltipField) : null,
         label: labelField ? vgcClean(vgcReadField(row, labelField).raw) : vgcDefaultLabel(row, fields, index)
       };
     }).filter(function(row) {
@@ -135,6 +138,7 @@ looker.plugins.visualizations.add({
       sizeField: sizeField,
       shapeField: shapeField,
       labelField: labelField,
+      tooltipField: tooltipField,
       xScaleType: xScaleType,
       yScaleType: yScaleType,
       markType: markType
@@ -168,25 +172,25 @@ function vgcRegisterOptions(vis, fields, config) {
     title: { type: "string", label: "Title", section: "Mark", default: "Visual Grammar Chart" },
     mark_type: { type: "string", label: "Mark Type", section: "Mark", display: "select", values: [{ "Auto": "auto" }, { "Point": "point" }, { "Bar": "bar" }, { "Line": "line" }, { "Heatmap Rect": "rect" }], default: "auto" },
     point_shape: { type: "string", label: "Default Point Shape", section: "Mark", display: "select", values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }], default: "circle" },
-    x_field: { type: "string", label: "X Field", section: "Channels", display: "select", values: values, default: "0" },
-    y_field: { type: "string", label: "Y Field", section: "Channels", display: "select", values: values, default: fields.length > 1 ? "1" : "0" },
-    color_field: { type: "string", label: "Color Field", section: "Channels", display: "select", values: optionalValues, default: "none" },
-    size_field: { type: "string", label: "Size Field", section: "Channels", display: "select", values: optionalValues, default: "none" },
-    shape_field: { type: "string", label: "Shape Field", section: "Channels", display: "select", values: optionalValues, default: "none" },
-    label_field: { type: "string", label: "Label Field", section: "Channels", display: "select", values: optionalValues, default: "none" },
+    x_field: { type: "string", label: "X Field", section: "Position", display: "select", values: values, default: "0" },
+    y_field: { type: "string", label: "Y Field", section: "Position", display: "select", values: values, default: fields.length > 1 ? "1" : "0" },
+    color_field: { type: "string", label: "Color Field", section: "Color", display: "select", values: optionalValues, default: "none" },
+    size_field: { type: "string", label: "Size Field", section: "Size", display: "select", values: optionalValues, default: "none" },
+    shape_field: { type: "string", label: "Shape Field", section: "Shape", display: "select", values: optionalValues, default: "none" },
+    label_field: { type: "string", label: "Label Field", section: "Label & Tooltip", display: "select", values: optionalValues, default: "none" },
+    tooltip_field: { type: "string", label: "Extra Tooltip Field", section: "Label & Tooltip", display: "select", values: optionalValues, default: "none" },
     x_scale_type: { type: "string", label: "X Scale Type", section: "Axis", display: "select", values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }], default: "auto" },
     y_scale_type: { type: "string", label: "Y Scale Type", section: "Axis", display: "select", values: [{ "Auto": "auto" }, { "Discrete": "discrete" }, { "Continuous": "continuous" }], default: "auto" },
     axis_range_mode: { type: "string", label: "Continuous Axis Range", section: "Axis", display: "select", values: [{ "Automatic": "auto" }, { "Compact Dynamic": "compact" }], default: "auto" },
     compact_percentile: { type: "number", label: "Compact Percentile", section: "Axis", default: 5 },
     show_grid: { type: "boolean", label: "Show Grid", section: "Axis", default: true },
-    point_shape: { type: "string", label: "Point Shape", section: "Style", display: "select", values: [{ "Circle": "circle" }, { "Square": "square" }, { "Diamond": "diamond" }], default: "circle" },
-    show_labels: { type: "boolean", label: "Show Labels", section: "Style", default: false },
+    show_labels: { type: "boolean", label: "Show Labels", section: "Label & Tooltip", default: false },
     show_legend: { type: "boolean", label: "Show Legend", section: "Style", default: true },
-    positive_light: { type: "string", label: "Positive Light", section: "Style", display: "color", default: "#9ECAE1" },
-    positive_dark: { type: "string", label: "Positive Dark", section: "Style", display: "color", default: "#1F77B4" },
-    negative_light: { type: "string", label: "Negative Light", section: "Style", display: "color", default: "#FDD0A2" },
-    negative_dark: { type: "string", label: "Negative Dark", section: "Style", display: "color", default: "#FF7F0E" },
-    zero_color: { type: "string", label: "Zero Color", section: "Style", display: "color", default: "#CBD5E1" }
+    positive_light: { type: "string", label: "Positive Light", section: "Color", display: "color", default: "#9ECAE1" },
+    positive_dark: { type: "string", label: "Positive Dark", section: "Color", display: "color", default: "#1F77B4" },
+    negative_light: { type: "string", label: "Negative Light", section: "Color", display: "color", default: "#FDD0A2" },
+    negative_dark: { type: "string", label: "Negative Dark", section: "Color", display: "color", default: "#FF7F0E" },
+    zero_color: { type: "string", label: "Zero Color", section: "Color", display: "color", default: "#CBD5E1" }
   };
   var signature = JSON.stringify(options);
   if (vis._vgcOptionsSignature === signature) return;
@@ -208,7 +212,7 @@ function vgcRender(element, state) {
 
   var width = Math.max(380, wrap.clientWidth || element.clientWidth || 760);
   var height = Math.max(300, wrap.clientHeight || element.clientHeight - 48 || 460);
-  var legendHeight = config.show_legend ? 26 : 0;
+  var legendHeight = config.show_legend ? 86 : 0;
   var margin = { top: 18, right: 28, bottom: 56 + legendHeight, left: 76 };
   var innerWidth = Math.max(120, width - margin.left - margin.right);
   var innerHeight = Math.max(120, height - margin.top - margin.bottom);
@@ -229,8 +233,8 @@ function vgcRender(element, state) {
   else if (state.markType === "rect") vgcDrawRects(g, state, xScale, yScale, color, tooltip, width);
   else vgcDrawPoints(g, state, xScale, yScale, color, size, shape, tooltip, width);
 
-  if (config.show_legend && state.colorField) {
-    vgcDrawLegend(g, margin.left, margin.top + innerHeight + 68, state, color);
+  if (config.show_legend && (state.colorField || state.sizeField || state.shapeField)) {
+    vgcDrawLegend(g, margin.left, margin.top + innerHeight + 68, state, color, size, shape);
   }
 }
 
@@ -347,11 +351,15 @@ function vgcBuildScale(cells, scaleType, rangeStart, rangeEnd, config) {
 
 function vgcColorScale(cells, field, config) {
   var fallback = "#2563EB";
-  if (!field) return function() { return fallback; };
+  if (!field) {
+    var noColor = function() { return fallback; };
+    noColor.kind = "none";
+    return noColor;
+  }
   if (vgcResolveScale("auto", field) === "discrete") {
     var palette = ["#2563EB", "#F97316", "#16A34A", "#9333EA", "#DC2626", "#0891B2", "#CA8A04", "#475569"];
     var values = [];
-    return function(cell) {
+    var categorical = function(cell) {
       var value = vgcClean(cell ? cell.raw : "");
       var index = values.indexOf(value);
       if (index < 0) {
@@ -360,23 +368,34 @@ function vgcColorScale(cells, field, config) {
       }
       return palette[index % palette.length];
     };
+    categorical.kind = "categorical";
+    categorical.values = values;
+    categorical.palette = palette;
+    return categorical;
   }
   var numeric = cells.map(function(cell) { return cell ? cell.number : null; }).filter(Number.isFinite);
   var stats = vgcStats(numeric);
-  return function(cell) {
+  var continuous = function(cell) {
     var value = cell ? cell.number : null;
     if (!Number.isFinite(value)) return fallback;
     if (Math.abs(value) < 1e-12) return config.zero_color || "#CBD5E1";
     if (value > 0) return vgcInterpolate(config.positive_light || "#9ECAE1", config.positive_dark || "#1F77B4", vgcClamp(value / Math.max(Math.abs(stats.max), 1e-12), 0, 1));
     return vgcInterpolate(config.negative_light || "#FDD0A2", config.negative_dark || "#FF7F0E", vgcClamp(Math.abs(value) / Math.max(Math.abs(stats.min), 1e-12), 0, 1));
   };
+  continuous.kind = "continuous";
+  continuous.stats = stats;
+  return continuous;
 }
 
 function vgcShapeScale(cells, field, defaultShape) {
-  if (!field) return function() { return defaultShape || "circle"; };
+  if (!field) {
+    var noShape = function() { return defaultShape || "circle"; };
+    noShape.kind = "none";
+    return noShape;
+  }
   var shapes = ["circle", "square", "diamond"];
   var values = [];
-  return function(cell) {
+  var scale = function(cell) {
     var value = vgcClean(cell ? cell.raw : "");
     var index = values.indexOf(value);
     if (index < 0) {
@@ -385,17 +404,28 @@ function vgcShapeScale(cells, field, defaultShape) {
     }
     return shapes[index % shapes.length];
   };
+  scale.kind = "categorical";
+  scale.values = values;
+  scale.shapes = shapes;
+  return scale;
 }
 
 function vgcSizeScale(cells, field) {
-  if (!field || vgcResolveScale("auto", field) !== "continuous") return function() { return 6; };
+  if (!field || vgcResolveScale("auto", field) !== "continuous") {
+    var noSize = function() { return 6; };
+    noSize.kind = "none";
+    return noSize;
+  }
   var numeric = cells.map(function(cell) { return cell ? Math.abs(cell.number) : null; }).filter(Number.isFinite);
   var stats = vgcStats(numeric);
-  return function(cell) {
+  var scale = function(cell) {
     var value = cell ? Math.abs(cell.number) : 0;
     var t = stats.max === stats.min ? 0.5 : (value - stats.min) / (stats.max - stats.min);
     return 4 + vgcClamp(t, 0, 1) * 14;
   };
+  scale.kind = "continuous";
+  scale.stats = stats;
+  return scale;
 }
 
 function vgcResolveScale(configured, field) {
@@ -506,11 +536,62 @@ function vgcTooltip(row, state) {
   if (state.colorField) lines.push(vgcHtml(vgcFieldLabel(state.colorField)) + ": " + vgcHtml(vgcDisplay(row.color)));
   if (state.sizeField) lines.push(vgcHtml(vgcFieldLabel(state.sizeField)) + ": " + vgcHtml(vgcDisplay(row.size)));
   if (state.shapeField) lines.push(vgcHtml(vgcFieldLabel(state.shapeField)) + ": " + vgcHtml(vgcDisplay(row.shape)));
+  if (state.tooltipField) lines.push(vgcHtml(vgcFieldLabel(state.tooltipField)) + ": " + vgcHtml(vgcDisplay(row.tooltip)));
   return lines.join("<br>");
 }
 
-function vgcDrawLegend(g, x, y, state) {
+function vgcDrawLegend(g, x, y, state, color, size, shape) {
+  var cursorX = x;
+  if (state.colorField) cursorX = vgcDrawColorLegend(g, cursorX, y, state, color) + 22;
+  if (state.sizeField && size.kind === "continuous") cursorX = vgcDrawSizeLegend(g, cursorX, y, state, size) + 22;
+  if (state.shapeField && shape.kind === "categorical") vgcDrawShapeLegend(g, cursorX, y, state, shape);
+}
+
+function vgcDrawColorLegend(g, x, y, state, color) {
   g.appendChild(vgcText("Color: " + vgcFieldLabel(state.colorField), x, y, "vgc-legend", "start"));
+  if (color.kind === "categorical") {
+    var maxItems = Math.min(color.values.length, 5);
+    for (var i = 0; i < maxItems; i++) {
+      var itemX = x + i * 82;
+      g.appendChild(vgcSvg("circle", { cx: itemX + 6, cy: y + 18, r: 5, fill: color.palette[i % color.palette.length], stroke: "#fff", "stroke-width": 1 }));
+      g.appendChild(vgcText(vgcTruncate(color.values[i], 10), itemX + 15, y + 22, "vgc-legend", "start"));
+    }
+    return x + Math.max(140, maxItems * 82);
+  }
+  var steps = 18;
+  var rampX = x;
+  var rampY = y + 12;
+  for (var s = 0; s < steps; s++) {
+    var value = color.stats.min + ((color.stats.max - color.stats.min) * s) / Math.max(steps - 1, 1);
+    g.appendChild(vgcSvg("rect", { x: rampX + s * 5, y: rampY, width: 5, height: 9, fill: color({ number: value }) }));
+  }
+  g.appendChild(vgcText(vgcFormat(color.stats.min), rampX, rampY + 24, "vgc-legend", "start"));
+  g.appendChild(vgcText(vgcFormat(color.stats.max), rampX + 90, rampY + 24, "vgc-legend", "end"));
+  return x + 126;
+}
+
+function vgcDrawSizeLegend(g, x, y, state, size) {
+  g.appendChild(vgcText("Size: " + vgcFieldLabel(state.sizeField), x, y, "vgc-legend", "start"));
+  var samples = [size.stats.min, (size.stats.min + size.stats.max) / 2, size.stats.max];
+  samples.forEach(function(value, index) {
+    var cx = x + 14 + index * 38;
+    var r = size({ number: value });
+    g.appendChild(vgcSvg("circle", { cx: cx, cy: y + 18, r: r, fill: "none", stroke: "#64748b", "stroke-width": 1.2 }));
+  });
+  g.appendChild(vgcText(vgcFormat(size.stats.min), x, y + 43, "vgc-legend", "start"));
+  g.appendChild(vgcText(vgcFormat(size.stats.max), x + 110, y + 43, "vgc-legend", "end"));
+  return x + 132;
+}
+
+function vgcDrawShapeLegend(g, x, y, state, shape) {
+  g.appendChild(vgcText("Shape: " + vgcFieldLabel(state.shapeField), x, y, "vgc-legend", "start"));
+  var maxItems = Math.min(shape.values.length, 4);
+  for (var i = 0; i < maxItems; i++) {
+    var itemX = x + i * 80;
+    g.appendChild(vgcShape(shape.shapes[i % shape.shapes.length], itemX + 6, y + 18, 6, "#64748b", 1));
+    g.appendChild(vgcText(vgcTruncate(shape.values[i], 10), itemX + 17, y + 22, "vgc-legend", "start"));
+  }
+  return x + Math.max(120, maxItems * 80);
 }
 
 function vgcShape(shape, cx, cy, radius, fill, opacity) {
